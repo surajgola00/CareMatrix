@@ -1,0 +1,18 @@
+services:
+  server:
+    build:
+      context: ./Server
+      dockerfile: ../Server.Dockerfile
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  client:
+    build:
+      context: ./Client
+      dockerfile: ../Client.Dockerfile
+    ports:
+      - "5173:5173"
+    depends_on:
+      - server
+    restart: unless-stopped

@@ -1,0 +1,552 @@
+/* ════════════════════════════════════════
+   SPLIT layout
+   ════════════════════════════════════════ */
+.workspace-panel.split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* ════════════════════════════════════════
+   NOTIFICATION PANEL (right column)
+   ════════════════════════════════════════ */
+.notification-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.notif-block {
+    border: 3px solid var(--ink);
+    background: var(--paper);
+    box-shadow: 8px 8px 0 var(--ink);
+    padding: 0.75rem 0.85rem;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.notif-block h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    flex-shrink: 0;
+}
+
+.notif-scroll {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    max-height: 240px;
+}
+
+/* ════════════════════════════════════════
+   NOTIF ITEM
+   ════════════════════════════════════════ */
+.notif-item {
+    border: 2px solid var(--ink);
+    padding: 0.55rem 0.65rem;
+    background: var(--paper);
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    font-size: 0.82rem;
+}
+
+.notif-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.18rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.notif-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+/* ════════════════════════════════════════
+   ACCEPT / DECLINE BUTTONS
+   ════════════════════════════════════════ */
+.notif-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    flex-shrink: 0;
+    align-self: flex-start;
+    padding-top: 2px;
+}
+
+.notif-btn-admit,
+.notif-btn-decline {
+    display: block;
+    border: 2px solid var(--ink);
+    padding: 0.28rem 0.65rem;
+    font: 700 0.72rem/1 var(--font-body, sans-serif);
+    cursor: pointer;
+    white-space: nowrap;
+    min-width: 72px;
+    text-align: center;
+}
+
+.notif-btn-admit {
+    background: #2e7d32;
+    color: #f2f0ea;
+}
+
+.notif-btn-admit:hover {
+    background: #1b5e20;
+}
+
+.notif-btn-decline {
+    background: var(--paper, #f2f0ea);
+    color: var(--ink, #111);
+}
+
+.notif-btn-decline:hover {
+    background: var(--accent, #8f1d1d);
+    color: #f2f0ea;
+}
+
+/* ════════════════════════════════════════
+   STATUS LABELS
+   ════════════════════════════════════════ */
+.status-pending {
+    color: #888;
+    font-weight: 700;
+    font-size: 0.75rem;
+}
+.status-accepted {
+    color: #2e7d32;
+    font-weight: 800;
+    font-size: 0.75rem;
+}
+.status-declined {
+    color: #8f1d1d;
+    font-weight: 800;
+    font-size: 0.75rem;
+}
+.status-admitted {
+    color: #2e7d32;
+    font-weight: 800;
+    font-size: 0.75rem;
+}
+.status-accepted-pending {
+    color: #c47a1d;
+    font-weight: 700;
+    font-size: 0.73rem;
+}
+
+.notif-status {
+    margin: 0;
+    font-size: 0.73rem;
+    font-weight: 700;
+}
+
+/* ════════════════════════════════════════
+   BADGES
+   ════════════════════════════════════════ */
+.notif-badge {
+    display: inline-block;
+    padding: 0.1rem 0.4rem;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.62rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border: 1.5px solid var(--ink);
+    width: fit-content;
+}
+
+.notif-badge-priority {
+    background: var(--ink);
+    color: var(--paper);
+}
+.notif-priority-critical {
+    background: #8f1d1d;
+    color: #f2f0ea;
+    border-color: #8f1d1d;
+}
+.notif-priority-high {
+    background: #c47a1d;
+    color: #f2f0ea;
+    border-color: #c47a1d;
+}
+.notif-priority-moderate {
+    background: #111;
+    color: #f2f0ea;
+    border-color: #111;
+}
+.notif-priority-low {
+    background: #2e7d32;
+    color: #f2f0ea;
+    border-color: #2e7d32;
+}
+
+/* ════════════════════════════════════════
+   SUB TEXT
+   ════════════════════════════════════════ */
+.notif-sub {
+    margin: 0;
+    font-size: 0.72rem;
+    opacity: 0.62;
+    line-height: 1.3;
+}
+
+.notif-empty {
+    margin: 0;
+    font-size: 0.78rem;
+    opacity: 0.45;
+    padding: 0.4rem 0;
+}
+
+/* ════════════════════════════════════════
+   ITEM VARIANTS
+   ════════════════════════════════════════ */
+.notif-item-fading {
+    opacity: 0.42;
+    transition: opacity 0.45s ease;
+}
+.notif-item-admitted {
+    border-left: 3px solid #2e7d32;
+}
+.notif-item-outgoing {
+    border-left: 3px solid #c47a1d;
+}
+
+/* ════════════════════════════════════════
+   MATCH LIST / CONFIRM TRANSFER
+   ════════════════════════════════════════ */
+.notif-confirm-label {
+    margin: 0.3rem 0 0.2rem 0;
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    opacity: 0.7;
+}
+
+.notif-confirm-done {
+    margin: 0.25rem 0 0;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #2e7d32;
+}
+
+.match-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-top: 0.15rem;
+}
+
+.match-btn {
+    border: 2px solid #2e7d32;
+    background: var(--paper);
+    padding: 0.32rem 0.6rem;
+    font: 700 0.73rem/1 var(--font-body, sans-serif);
+    cursor: pointer;
+    text-align: left;
+    color: #2e7d32;
+    transition:
+        background 100ms,
+        color 100ms;
+}
+
+.match-btn:hover {
+    background: #2e7d32;
+    color: var(--paper);
+}
+
+/* ════════════════════════════════════════
+   SURGE ALERTS BLOCK
+   ════════════════════════════════════════ */
+.surge-alert-block {
+    border-color: #8f1d1d;
+    box-shadow: 8px 8px 0 #8f1d1d;
+}
+
+.surge-alert-item {
+    border: 1.5px solid var(--ink);
+    padding: 0.45rem 0.6rem;
+    background: var(--paper);
+    display: flex;
+    flex-direction: column;
+    gap: 0.18rem;
+    flex-shrink: 0;
+}
+
+.surge-alert-row {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.surge-level-badge {
+    display: inline-block;
+    padding: 0.08rem 0.42rem;
+    font-size: 0.58rem;
+    font-weight: 800;
+    font-family: monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.surge-code {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    opacity: 0.75;
+}
+.surge-message {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: 1.38;
+}
+.surge-source {
+    margin: 0;
+    font-size: 0.64rem;
+    opacity: 0.48;
+    font-family: monospace;
+}
+
+/* ════════════════════════════════════════
+   HOSPITAL IDENTITY (topbar)
+   ════════════════════════════════════════ */
+.brand-text-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.hospital-location-sub {
+    margin: 0;
+    font-size: 0.68rem;
+    opacity: 0.52;
+    font-family: var(--font-mono, monospace);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+/* ════════════════════════════════════════
+   ORDER SUCCESS
+   ════════════════════════════════════════ */
+.order-success {
+    margin-top: 14px;
+    color: #2e7d32;
+    font-weight: 800;
+    font-size: 0.9rem;
+}
+
+/* ════════════════════════════════════════
+   NETWORK RESOURCE POOL
+   ════════════════════════════════════════ */
+.pool-panel {
+    border: 3px solid var(--ink);
+    background: var(--paper);
+    box-shadow: 8px 8px 0 var(--ink);
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.pool-heading {
+    margin: 0 0 0.15rem 0;
+    font-size: 0.88rem;
+}
+.pool-sub {
+    margin: 0 0 0.75rem 0;
+    font-size: 0.7rem;
+    opacity: 0.5;
+    font-family: var(--font-mono, monospace);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.pool-entry {
+    border: 2px solid var(--ink);
+    margin-bottom: 0.5rem;
+}
+
+.pool-entry-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.4rem 0.6rem;
+    border: none;
+    background: var(--paper);
+    cursor: pointer;
+    text-align: left;
+    gap: 0.5rem;
+}
+
+.pool-entry-header:hover {
+    background: var(--ink);
+    color: var(--paper);
+}
+
+.pool-hosp-name {
+    font-size: 0.78rem;
+    font-weight: 700;
+    flex: 1;
+}
+.pool-dist {
+    font-size: 0.68rem;
+    font-family: monospace;
+    opacity: 0.6;
+    flex-shrink: 0;
+}
+.pool-chevron {
+    font-size: 0.6rem;
+    flex-shrink: 0;
+}
+
+.pool-resources {
+    border-top: 2px solid var(--ink);
+    padding: 0.4rem 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.pool-resource-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+}
+.pool-icon {
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+.pool-res-name {
+    flex: 1;
+    font-weight: 600;
+}
+.pool-avail {
+    font-family: monospace;
+    font-size: 0.68rem;
+    opacity: 0.65;
+    flex-shrink: 0;
+}
+
+.pool-request-btn {
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+    padding: 2px 8px;
+    font: 700 0.68rem/1 sans-serif;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    flex-shrink: 0;
+}
+
+.pool-request-btn:hover:not(:disabled) {
+    background: var(--ink);
+    color: var(--paper);
+}
+.pool-requested {
+    background: #2e7d32;
+    color: #f2f0ea;
+    border-color: #2e7d32;
+    cursor: default;
+}
+.transfer-decision-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
+    border: 1.5px solid var(--ink);
+    padding: 0.3rem 0.5rem;
+    margin-top: 0.2rem;
+    background: var(--paper);
+}
+.transfer-hosp-name {
+    font-size: 0.74rem;
+    font-weight: 700;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.transfer-decision-btns {
+    display: flex;
+    gap: 0.3rem;
+    flex-shrink: 0;
+}
+.td-btn-confirm,
+.td-btn-deny {
+    border: 2px solid var(--ink);
+    padding: 0.22rem 0.5rem;
+    font: 700 0.68rem/1 sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.td-btn-confirm {
+    background: #2e7d32;
+    color: #f2f0ea;
+    border-color: #2e7d32;
+}
+.td-btn-confirm:hover {
+    background: #1b5e20;
+    border-color: #1b5e20;
+}
+.td-btn-deny {
+    background: var(--paper, #f2f0ea);
+    color: var(--ink, #111);
+}
+.td-btn-deny:hover {
+    background: #8f1d1d;
+    color: #f2f0ea;
+    border-color: #8f1d1d;
+}
+
+.denied-notif-block {
+    border-color: #8f1d1d;
+    box-shadow: 8px 8px 0 #8f1d1d;
+}
+.denied-notif-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+    border: 1.5px solid #8f1d1d;
+    padding: 0.4rem 0.55rem;
+    background: var(--paper);
+}
+.denied-notif-msg {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #8f1d1d;
+    flex: 1;
+    line-height: 1.35;
+}
+.denied-dismiss {
+    border: 1.5px solid #8f1d1d;
+    background: transparent;
+    color: #8f1d1d;
+    padding: 0 0.35rem;
+    font-size: 0.7rem;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.denied-dismiss:hover {
+    background: #8f1d1d;
+    color: #f2f0ea;
+}

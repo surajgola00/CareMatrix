@@ -1,0 +1,373 @@
+:root {
+  --bg: #f2f0ea;
+  --panel: #dde4e8;
+  --ink: #111111;
+  --red: #8f1d1d;
+  --red-dark: #6f1111;
+  --muted: #c4d8df;
+}
+
+.heatmap-shell {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: sans-serif;
+}
+
+.heatmap-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 18px;
+  border-bottom: 2px solid var(--ink);
+  flex-shrink: 0;
+  gap: 1rem;
+}
+
+.heatmap-header-left h2 {
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.heatmap-sub {
+  margin: 2px 0 0 0;
+  font-size: 0.7rem;
+  opacity: 0.5;
+  font-family: monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.heatmap-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.heatmap-stats {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1.5px solid var(--ink);
+  background: var(--bg);
+  padding: 4px 8px;
+  font: 700 0.68rem/1 monospace;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: background 100ms;
+}
+
+.stat-chip.active,
+.stat-chip:hover {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.back-button {
+  border: 2px solid var(--ink);
+  background: transparent;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
+.back-button:hover {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.heatmap-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.map-container {
+  flex: 1;
+  min-height: 0;
+  border-right: 2px solid var(--ink);
+  position: relative;
+}
+
+.heatmap-map {
+  width: 100%;
+  height: 100%;
+}
+
+.heatmap-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  height: 100%;
+  font-size: 0.9rem;
+  font-weight: 600;
+  opacity: 0.6;
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--ink);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Info panel ── */
+.info-panel {
+  width: 300px;
+  flex-shrink: 0;
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow-y: auto;
+}
+
+/* Legend */
+.legend-block {
+  border-bottom: 2px solid var(--ink);
+  padding: 10px 14px;
+  flex-shrink: 0;
+}
+
+.legend-title {
+  margin: 0 0 6px 0;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.6;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  margin: 3px 0;
+}
+
+.legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0,0,0,0.2);
+}
+
+/* Hospital list */
+.hospital-list {
+  flex: 1;
+  overflow-y: auto;
+  border-bottom: 2px solid var(--ink);
+}
+
+.hospital-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 14px;
+  border-bottom: 1px solid rgba(0,0,0,0.12);
+  cursor: pointer;
+  transition: background 80ms;
+}
+
+.hospital-row:hover {
+  background: rgba(0,0,0,0.06);
+}
+
+.hospital-row-selected {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.hospital-row-selected .hosp-name {
+  color: var(--bg);
+}
+
+.hosp-row-left {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.hosp-demand-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.hosp-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.hosp-demand-val {
+  font-size: 0.75rem;
+  font-weight: 800;
+  font-family: monospace;
+  flex-shrink: 0;
+}
+
+/* Detail card */
+.info-card {
+  margin: 12px;
+  border: 2.5px solid;
+  padding: 14px;
+  background: var(--bg);
+  flex-shrink: 0;
+}
+
+.info-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-bottom: 2px solid;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.info-card-header h3 {
+  margin: 0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.info-status-badge {
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  font-family: monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+.info-metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.metric-label {
+  font-size: 0.7rem;
+  opacity: 0.6;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metric-val {
+  font-size: 1.4rem;
+  font-weight: 800;
+  font-family: monospace;
+  line-height: 1;
+}
+
+.demand-bar-wrap {
+  height: 8px;
+  background: rgba(0,0,0,0.12);
+  border: 1px solid rgba(0,0,0,0.15);
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.demand-bar-fill {
+  height: 100%;
+  transition: width 0.6s ease;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.info-metric-sm {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1.5px solid rgba(0,0,0,0.15);
+  padding: 5px 8px;
+}
+
+.metric-val-sm {
+  font-size: 0.92rem;
+  font-weight: 800;
+  font-family: monospace;
+}
+
+.info-close-btn {
+  width: 100%;
+  border: 2px solid var(--ink);
+  background: transparent;
+  padding: 5px;
+  font: 700 0.75rem/1 monospace;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.info-close-btn:hover {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.info-hint {
+  padding: 12px 14px;
+  font-size: 0.75rem;
+  opacity: 0.5;
+  text-align: center;
+}
+
+/* Leaflet tooltip */
+.map-tooltip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.map-tooltip strong {
+  font-size: 0.78rem;
+}
+
+.map-tooltip span {
+  font-size: 0.7rem;
+  opacity: 0.75;
+}

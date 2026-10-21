@@ -1,0 +1,103 @@
+# WHERE TO PUT YOUR FILES — Patient Predictor System
+# ============================================================
+
+patient_predictor/              ← UNZIP HERE. This is your working directory.
+│                                 All commands must be run from INSIDE this folder.
+│
+├── train.py                    ← The CLI trainer. Never move this.
+├── requirements.txt            ← pip dependencies list.
+├── README.md                   ← Full command reference.
+├── patient_prediction_system.html  ← Browser dashboard. Open in any browser.
+│
+├── data/                       ← PUT YOUR CSV FILES HERE
+│   ├── demo.csv                ← Included demo (safe to delete later)
+│   ├── your_hospital_data.csv  ← ← ← YOUR CSV goes here
+│   ├── june_2025.csv           ← Future update CSVs also go here
+│   ├── session_0001.csv        ← AUTO-CREATED by train.py (don't touch)
+│   └── session_0002.csv        ← AUTO-CREATED on second run (don't touch)
+│
+├── models/                     ← AUTO-CREATED. Never edit manually.
+│   ├── ensemble.pkl            ← Trained sklearn models
+│   ├── stats.json              ← Learned patterns and multipliers
+│   └── memory.json             ← Cross-session memory index
+│
+├── exports/                    ← AUTO-CREATED. Your output files appear here.
+│   ├── forecast_all_20250818.csv       ← Forecast CSVs saved here
+│   └── dashboard_model_20250818.json  ← Load this file in the HTML dashboard
+│
+└── logs/                       ← AUTO-CREATED. Training logs saved here.
+    └── train_20250818_143022.log
+
+
+# ============================================================
+# STEP-BY-STEP SETUP
+# ============================================================
+
+  STEP 1 — Unzip the package
+    Windows:   Right-click zip → "Extract All"
+    Mac/Linux: unzip patient_predictor_system.zip
+
+  STEP 2 — Open a terminal INSIDE the patient_predictor/ folder
+    Windows:   Open the folder → click the address bar → type "cmd" → Enter
+    Mac:       Right-click the folder → "New Terminal at Folder"
+    Linux:     cd /path/to/patient_predictor
+
+  STEP 3 — Confirm you are in the right place
+    Type: ls        (Mac/Linux)
+    Type: dir       (Windows)
+
+    You should see these files listed:
+      train.py
+      requirements.txt
+      README.md
+      patient_prediction_system.html
+      data/
+
+  STEP 4 — Install dependencies (once only)
+    pip install -r requirements.txt
+
+  STEP 5 — Put your CSV in the data/ folder, then train
+    python train.py --csv data/your_hospital_data.csv
+
+
+# ============================================================
+# COMMAND REFERENCE
+# ============================================================
+
+  Train fresh
+    python train.py --csv data/your_data.csv
+
+  Add new data and keep memory of old sessions
+    python train.py --csv data/june.csv --retrain
+
+  Predict a specific date
+    python train.py --predict --date 2025-08-20
+
+  Predict for one specialty only
+    python train.py --predict --date 2025-08-20 --facility "General Medicine"
+
+  30-day forecast (saves CSV to exports/)
+    python train.py --forecast --days 30
+
+  See all past training sessions
+    python train.py --status
+
+  Export model for HTML dashboard
+    python train.py --export-dashboard
+    → Then open patient_prediction_system.html in your browser
+    → Click "Load saved model" → select the .json file from exports/
+
+
+# ============================================================
+# CSV PATH RULES
+# ============================================================
+
+  If your CSV is inside the data/ subfolder (recommended):
+    python train.py --csv data/patients.csv
+
+  If your CSV is somewhere else on your computer (also works):
+    Windows:   python train.py --csv C:\Users\You\Downloads\patients.csv
+    Mac/Linux: python train.py --csv ~/Downloads/patients.csv
+
+  The system copies the data into data/session_NNNN.csv automatically,
+  so the original file location does not matter after the first run.

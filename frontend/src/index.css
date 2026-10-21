@@ -1,0 +1,54 @@
+:root {
+    --paper: #f2f0ea;
+    --paper-alt: #dde4e8;
+    --ink: #111111;
+    --accent: #8f1d1d;
+    --accent-dark: #6f1111;
+    --signal: #c4d8df;
+    --font-display: Impact, Haettenschweiler, "Arial Black", sans-serif;
+    --font-body: "Trebuchet MS", "Segoe UI", sans-serif;
+    --font-mono: "Courier New", Courier, monospace;
+    font: 16px/1.4 var(--font-body);
+    color: var(--ink);
+    background: var(--paper);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    min-width: 320px;
+    background: var(--paper);
+    color: var(--ink);
+}
+
+body,
+input,
+button,
+a {
+    font-family: var(--font-body);
+}
+
+#root {
+    min-height: 100vh;
+}
+
+h1,
+h2,
+p {
+    margin: 0;
+}
+
+a {
+    color: inherit;
+}

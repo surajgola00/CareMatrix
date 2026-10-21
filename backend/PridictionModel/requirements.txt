@@ -1,0 +1,26 @@
+# Patient Influx & Capacity Prediction System
+# Install: pip install -r requirements.txt
+
+# ── Core ML (required) ────────────────────────────────────────
+scikit-learn>=1.3.0     # GBM, RF, KNN, Ridge, DT algorithms + scaler + metrics
+numpy>=1.24.0           # array operations, feature matrix
+pandas>=2.0.0           # CSV loading, date parsing, groupby
+joblib>=1.3.0           # model save/load — ships with scikit-learn
+
+# ── API server (required if using server.py) ──────────────────
+flask>=3.0.0            # REST API server
+
+# ── CLI extras (optional, graceful fallback if absent) ────────
+colorama>=0.4.6         # coloured terminal output (needed on Windows)
+tqdm>=4.65.0            # progress bars during training
+
+# ── GPU acceleration (optional) ───────────────────────────────
+# Uncomment the lines below to enable GPU training.
+# NVIDIA / AMD GPU: both xgboost and lightgbm will auto-detect CUDA/ROCm.
+# Apple M-series: scikit-learn already uses Metal Accelerate — no extra install.
+#
+# xgboost>=2.0.0        # replaces GBM on NVIDIA/AMD (10-50x faster)
+# lightgbm>=4.0.0       # replaces RF  on NVIDIA/AMD (5-20x faster)
+#
+# After installing, run: python train.py --benchmark
+# to see actual speed comparison on your hardware.

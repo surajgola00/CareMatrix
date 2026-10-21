@@ -1,0 +1,618 @@
+/* ─────────────────────────────────────────
+   DASHBOARD SHELL
+───────────────────────────────────────── */
+.dashboard-shell {
+    position: relative;
+    overflow: hidden;
+    min-height: 100vh;
+    padding: 2rem;
+    background: var(--paper);
+}
+
+.dashboard-shell::before {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    background: linear-gradient(
+        135deg,
+        transparent 46%,
+        var(--ink) 46% 54%,
+        transparent 54%
+    );
+    transform: translateX(-130%);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0;
+}
+
+.dashboard-shell.animate-ribbon[data-ribbon-cycle="0"]::before {
+    animation: ribbon-sweep-a 1.8s ease-out;
+}
+
+.dashboard-shell.animate-ribbon[data-ribbon-cycle="1"]::before {
+    animation: ribbon-sweep-b 1.8s ease-out;
+}
+
+.dashboard-shell > * {
+    position: relative;
+    z-index: 1;
+}
+
+@keyframes ribbon-sweep-a {
+    from {
+        opacity: 1;
+        transform: translateX(-130%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(130%);
+    }
+}
+
+@keyframes ribbon-sweep-b {
+    from {
+        opacity: 1;
+        transform: translateX(-130%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(130%);
+    }
+}
+
+/* ─────────────────────────────────────────
+   TOPBAR
+───────────────────────────────────────── */
+.dashboard-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1.5rem 1.75rem;
+    border: 3px solid var(--ink);
+    background: var(--paper-alt);
+    box-shadow: 10px 10px 0 var(--ink);
+}
+
+.account-menu {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.brand-block,
+.section-heading {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.dashboard-label {
+    margin: 0 0 0.35rem;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.dashboard-topbar h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4.5vw, 3.5rem);
+    line-height: 0.95;
+    text-transform: uppercase;
+}
+
+/* ─────────────────────────────────────────
+   LOGOS / ICONS
+───────────────────────────────────────── */
+.brand-logo,
+.panel-logo,
+.hero-cross {
+    border: 3px solid var(--ink);
+    background:
+        linear-gradient(
+            90deg,
+            transparent 38%,
+            var(--accent) 38%,
+            var(--accent) 62%,
+            transparent 62%
+        ),
+        linear-gradient(
+            transparent 38%,
+            var(--accent) 38%,
+            var(--accent) 62%,
+            transparent 62%
+        ),
+        var(--paper);
+}
+
+.brand-logo {
+    width: 3.5rem;
+    height: 3.5rem;
+    box-shadow: 6px 6px 0 var(--ink);
+}
+
+.panel-logo {
+    width: 2.5rem;
+    height: 2.5rem;
+    box-shadow: 5px 5px 0 var(--ink);
+}
+
+.account-avatar {
+    display: grid;
+    place-items: center;
+    width: 4rem;
+    height: 4rem;
+    border: 3px solid var(--ink);
+    background: var(--paper);
+    font: 900 1.1rem/1 var(--font-display);
+    box-shadow: 6px 6px 0 var(--ink);
+}
+
+/* ─────────────────────────────────────────
+   BUTTONS
+───────────────────────────────────────── */
+.signout-button,
+.action-card,
+.mini-action,
+.waiting-item {
+    border: 3px solid var(--ink);
+    font: 900 1rem/1 var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition:
+        transform 120ms ease,
+        box-shadow 120ms ease,
+        background 120ms ease;
+}
+
+.signout-button {
+    padding: 1rem 1.2rem;
+    background: var(--accent);
+    color: var(--paper);
+    box-shadow: 6px 6px 0 var(--ink);
+}
+
+.action-card,
+.mini-action,
+.waiting-item {
+    width: 100%;
+    padding: 1.1rem;
+    text-align: left;
+    box-shadow: 8px 8px 0 var(--ink);
+}
+
+.action-card {
+    background: var(--accent);
+    color: var(--paper);
+}
+
+.mini-action,
+.waiting-item {
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 0.95rem;
+}
+
+.signout-button:hover,
+.signout-button:focus-visible,
+.action-card:hover,
+.action-card:focus-visible {
+    outline: none;
+    background: var(--accent-dark);
+    transform: translate(-4px, -4px);
+    box-shadow: 12px 12px 0 var(--ink);
+}
+
+.mini-action:hover,
+.mini-action:focus-visible {
+    outline: none;
+    background: var(--accent-dark);
+    color: var(--paper);
+    transform: translate(-4px, -4px);
+    box-shadow: 12px 12px 0 var(--ink);
+}
+
+/* ─────────────────────────────────────────
+   DASHBOARD GRID + PANELS
+───────────────────────────────────────── */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 0.72fr 1.28fr;
+    gap: 1.5rem;
+}
+
+.welcome-panel,
+.workspace-panel,
+.form-panel {
+    position: relative;
+    padding: 2rem;
+    border: 3px solid var(--ink);
+    box-shadow: 10px 10px 0 var(--ink);
+}
+
+.welcome-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-height: 24rem;
+    background:
+        linear-gradient(
+            180deg,
+            rgba(143, 29, 29, 0.08) 0 22%,
+            transparent 22% 100%
+        ),
+        var(--paper);
+}
+
+.workspace-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+}
+
+.form-panel {
+    background: var(--paper-alt);
+}
+
+.hero-cross {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    width: 5rem;
+    height: 5rem;
+    box-shadow: 8px 8px 0 var(--ink);
+}
+
+.welcome-panel h2 {
+    margin: 0;
+    max-width: 5ch;
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 7vw, 5.5rem);
+    line-height: 0.88;
+    text-transform: uppercase;
+}
+
+.welcome-copy {
+    max-width: 18rem;
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+/* ─────────────────────────────────────────
+   FORM
+───────────────────────────────────────── */
+.quick-links,
+.quick-form {
+    display: grid;
+    gap: 1rem;
+}
+
+.quick-links {
+    margin-top: 0.5rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.section-heading {
+    margin-bottom: 1.25rem;
+}
+
+.section-heading h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(1.7rem, 2.5vw, 2.4rem);
+    line-height: 0.95;
+    text-transform: uppercase;
+}
+
+.quick-form label {
+    display: grid;
+    gap: 0.55rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.quick-form input,
+.quick-form select,
+.quick-form textarea {
+    padding: 0.95rem 1rem;
+    font: 700 1rem/1.2 var(--font-body);
+    background: var(--paper);
+    color: var(--ink);
+    border: 3px solid var(--ink);
+    box-shadow: 7px 7px 0 var(--ink);
+    resize: vertical;
+}
+
+.quick-form input:focus,
+.quick-form select:focus,
+.quick-form textarea:focus {
+    outline: none;
+    transform: translate(-2px, -2px);
+    box-shadow: 9px 9px 0 var(--accent);
+}
+
+.quick-form select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image:
+        linear-gradient(45deg, transparent 50%, var(--ink) 50%),
+        linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+    background-position:
+        calc(100% - 1rem) calc(1rem + 0.25em),
+        calc(100% - 0.65rem) calc(1rem + 0.25em);
+    background-size:
+        6px 6px,
+        6px 6px;
+    background-repeat: no-repeat;
+    padding-right: 2.2rem;
+    border-radius: 0;
+}
+
+.quick-form select:hover,
+.quick-form select:focus {
+    background-image:
+        linear-gradient(45deg, transparent 50%, var(--accent-dark) 50%),
+        linear-gradient(135deg, var(--accent-dark) 50%, transparent 50%);
+}
+
+.quick-form select option {
+    background: var(--paper);
+    color: var(--ink);
+}
+
+/* ─────────────────────────────────────────
+   INVENTORY
+───────────────────────────────────────── */
+.inventory-shell {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.inventory-layout {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+.inventory-table {
+    width: 66%;
+    border-right: 2px solid var(--ink);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.table-header {
+    display: grid;
+    grid-template-columns: 2.5fr 1fr 1fr 2fr;
+    padding: 14px 16px;
+    border-bottom: 3px solid var(--ink);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+
+.table-row {
+    display: grid;
+    grid-template-columns: 2.5fr 1fr 1fr 2fr;
+    padding: 14px 16px;
+    border-bottom: 2px solid var(--ink);
+    align-items: center;
+    background: var(--paper);
+}
+
+.table-row:nth-child(even) {
+    background: #eceae4;
+}
+.table-row:hover {
+    background: #e7e5df;
+}
+.table-row.row-required {
+    background: rgba(143, 29, 29, 0.08);
+    border-left: 4px solid #8f1d1d;
+}
+.table-row.row-required:nth-child(even) {
+    background: rgba(143, 29, 29, 0.1);
+}
+.table-row.row-ok {
+    background: rgba(46, 125, 50, 0.08);
+    border-left: 4px solid #2e7d32;
+}
+
+.item-name {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+}
+
+.icon {
+    font-size: 18px;
+}
+
+.number {
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    font-size: 14px;
+}
+
+.status {
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+}
+.status-ok {
+    color: #2e7d32;
+}
+.status-bad {
+    color: #8f1d1d;
+}
+
+.inventory-side {
+    width: 34%;
+    padding: 16px;
+    background: var(--paper-alt);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+}
+
+.bill-panel {
+    border: 2px solid var(--ink);
+    padding: 12px;
+    background: var(--paper);
+    box-shadow: 6px 6px 0 var(--ink);
+}
+
+.bill-row {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr;
+    align-items: center;
+    margin: 6px 0;
+}
+
+.bill-calc {
+    text-align: center;
+}
+.bill-amount {
+    text-align: right;
+}
+
+.bill-total {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    border-top: 2px solid var(--ink);
+    padding-top: 8px;
+    font-weight: 800;
+}
+
+.order-button {
+    margin-top: 14px;
+    width: 100%;
+    border: 2px solid var(--ink);
+    background: var(--accent);
+    color: var(--paper);
+    padding: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.order-button:hover {
+    background: var(--accent-dark);
+}
+.order-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.order-success {
+    margin-top: 14px;
+    color: #2e7d32;
+    font-weight: 800;
+    font-size: 0.9rem;
+}
+
+.placeholder {
+    opacity: 0.6;
+}
+
+/* ─────────────────────────────────────────
+   INVENTORY PRED INFO CARD
+───────────────────────────────────────── */
+.pred-info-card {
+    border: 2px solid var(--ink);
+    padding: 0.75rem 1rem;
+    background: var(--ink);
+    color: var(--paper);
+    box-shadow: 5px 5px 0 var(--accent);
+}
+
+.pred-info-label {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0.6;
+}
+
+.pred-info-val {
+    margin: 0.2rem 0 0;
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    line-height: 1;
+}
+
+.pred-info-sub {
+    margin: 0.2rem 0 0;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    opacity: 0.55;
+}
+
+/* ─────────────────────────────────────────
+   RESPONSIVE
+───────────────────────────────────────── */
+@media (max-width: 960px) {
+    .dashboard-shell {
+        padding: 1.25rem;
+    }
+
+    .dashboard-topbar,
+    .account-menu {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .dashboard-grid,
+    .workspace-panel {
+        grid-template-columns: 1fr;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .welcome-panel,
+    .form-panel {
+        min-height: auto;
+    }
+
+    .hero-cross {
+        width: 4.5rem;
+        height: 4.5rem;
+    }
+}
+
+/* LOGIN ERROR */
+.login-error {
+    margin: 0;
+    padding: 0.6rem 0.8rem;
+    border: 2px solid var(--accent);
+    background: rgba(143, 29, 29, 0.08);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+}

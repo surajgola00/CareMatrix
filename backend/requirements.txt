@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+mysql-connector-python
+pydantic
+pydantic-settings
+python-dotenv
+fastapi-cors
+joblib
+scikit-learn
+pandas
