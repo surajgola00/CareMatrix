@@ -4,8 +4,8 @@ echo Setting up CareMatrix...
 :: ── SERVER ──────────────────────────────
 echo.
 echo [1/4] Creating Python virtual environment...
-cd Server
-python -m venv .venv
+cd backend
+if not exist .venv\Scripts\python.exe python -m venv .venv
 call .venv\Scripts\activate.bat
 
 echo [2/4] Installing Python dependencies...
@@ -18,12 +18,12 @@ cd ..
 :: ── CLIENT ──────────────────────────────
 echo.
 echo [4/4] Installing and building React client...
-cd Client
-call bun install
-call bun run build
+cd frontend
+if not exist node_modules npm install
+call npm run build
 
 echo Starting frontend on port 5173...
-start "CareMatrix Client" cmd /k "bun run preview --port 5173"
+start "CareMatrix Client" cmd /k "npm run preview -- --host 127.0.0.1 --port 5173"
 cd ..
 
 echo.

@@ -6,7 +6,7 @@ echo "Setting up CareMatrix..."
 # ── SERVER ──────────────────────────────
 echo ""
 echo "[1/4] Creating Python virtual environment..."
-cd Server
+cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 
@@ -21,10 +21,9 @@ cd ..
 # ── CLIENT ──────────────────────────────
 echo ""
 echo "[4/4] Installing and building React client..."
-cd Client
-bun install
-bun run dev --host
-echo "Serving built client on port 5173..."
+cd ../frontend
+npm install
+npm run dev -- --host 0.0.0.0 &
 CLIENT_PID=$!
 cd ..
 

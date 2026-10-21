@@ -1,8 +1,8 @@
 {
   "version": "4.0",
-  "trained_at": "2026-03-19T18:50:55.515622",
+  "trained_at": "2026-10-22T00:43:49.236524",
   "total_rows": 2192,
-  "session_id": 35,
+  "session_id": 36,
   "global_mean": 35.31341240875913,
   "global_std": 9.946173842743686,
   "t_slope": 0.0004457294194694912,
@@ -197,24 +197,24 @@
   },
   "feature_importance": {
     "day_of_week": 0.08628090943147049,
-    "month": 0.011544579740738744,
+    "month": 0.011544579740738747,
     "day_of_month": 0.009830268640658623,
     "lagged_arrivals": 0.04264196706775552,
     "revisit_rate": 0.5521001296725154,
-    "holiday": 0.0011021021661002895,
+    "holiday": 0.0011021021661002885,
     "hour_of_day": 0.0,
     "morning_shift": 0.0,
     "temperature": 0.015940754445316282,
-    "air_quality": 0.019501579553176787,
+    "air_quality": 0.019501579553176784,
     "rainfall": 0.011419222380810468,
     "seasonal_prior": 0.007371684071397094,
     "doctor_load": 0.1838900090930877,
     "weekend_flag": 0.003825957260102748,
-    "peak_month_flag": 0.005717300036530071,
-    "early_month_flag": 0.001482837469989129,
+    "peak_month_flag": 0.0057173000365300704,
+    "early_month_flag": 0.0014828374699891295,
     "lagged_ratio": 0.04735069897035078
   },
-  "training_time_sec": 2.15,
-  "gpu_used": "NVIDIA GeForce RTX 3050 Laptop GPU, 4096 MiB",
-  "cpu_cores": 12
+  "training_time_sec": 2.63,
+  "gpu_used": "NVIDIA GeForce RTX 3050 6GB Laptop GPU, 6144 MiB",
+  "cpu_cores": 16
 }

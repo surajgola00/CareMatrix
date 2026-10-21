@@ -191,7 +191,7 @@ export default function HeatMapPage() {
               .filter((h) => filter === "ALL" || zoneColor(h.demand).label === filter)
               .sort((a, b) => b.demand - a.demand)
               .map((h) => {
-                const { fill, label } = zoneColor(h.demand);
+                const { fill } = zoneColor(h.demand);
                 return (
                   <div
                     key={h.id}

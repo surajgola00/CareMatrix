@@ -1,6 +1,6 @@
 {
-  "sessions": 35,
-  "total_rows": 534419,
+  "sessions": 36,
+  "total_rows": 536611,
   "date_range": {
     "first": "2023-01-01",
     "last": "2024-07-01"
@@ -46,7 +46,8 @@
     "6bc62e7750bc",
     "6bc62e7750bc",
     "e08b13ac1d59",
-    "e08b13ac1d59"
+    "e08b13ac1d59",
+    "52f8f72ae283"
   ],
   "cumulative_stats": {
     "global_mean": 35.31341240875913,
@@ -439,6 +440,17 @@
       "accuracy": 97.7,
       "csv": "./PridictionModel/data/hospital321.csv",
       "gpu": "NVIDIA GeForce RTX 3050 Laptop GPU, 4096 MiB"
+    },
+    {
+      "session": 36,
+      "date": "2026-10-22T00:43:49.239071",
+      "rows_added": 2192,
+      "total_rows": 536611,
+      "best_model": "DT",
+      "best_mae": 0.8,
+      "accuracy": 97.7,
+      "csv": "./PridictionModel/data/hospital321.csv",
+      "gpu": "NVIDIA GeForce RTX 3050 6GB Laptop GPU, 6144 MiB"
     }
   ],
   "capacity_defaults": {
