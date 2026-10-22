@@ -9,6 +9,7 @@ type HospitalCtx = {
   setHospital: (hospital: AuthHospital) => void;
   clearHospital: () => Promise<void>;
   authenticated: boolean;
+  ready: boolean;
 };
 
 const Ctx = createContext<HospitalCtx>({
@@ -17,6 +18,7 @@ const Ctx = createContext<HospitalCtx>({
   setHospital: () => {},
   clearHospital: async () => {},
   authenticated: false,
+  ready: false,
 });
 
 export function HospitalProvider({ children }: { children: ReactNode }) {
@@ -37,7 +39,7 @@ export function HospitalProvider({ children }: { children: ReactNode }) {
   }, [hospital]);
 
   return (
-    <Ctx.Provider value={{ hospitalId: hospital?.hospital_id ?? null, hospital, setHospital, clearHospital, authenticated: checked && !!hospital }}>
+    <Ctx.Provider value={{ hospitalId: hospital?.hospital_id ?? null, hospital, setHospital, clearHospital, authenticated: !!hospital, ready: checked }}>
       {children}
     </Ctx.Provider>
   );

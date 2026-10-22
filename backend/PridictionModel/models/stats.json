@@ -1,11 +1,11 @@
 {
   "version": "4.0",
-  "trained_at": "2026-10-22T17:39:12.948631",
+  "trained_at": "2026-10-22T20:27:14.422114",
   "total_rows": 2192,
-  "session_id": 49,
+  "session_id": 77,
   "global_mean": 35.31341240875913,
   "global_std": 9.946173842743686,
-  "t_slope": 0.0004375340271708393,
+  "t_slope": 0.00044635606562050726,
   "hol_mult": 0.7639384269921559,
   "dowM": {
     "0": 0.6277422658108472,
@@ -84,25 +84,25 @@
     "walkInPct": 36.0,
     "phonePct": 34.0
   },
-  "best_model": "DT",
+  "best_model": "GBM",
   "best_mae": 0.8,
-  "best_rmse": 1.65,
-  "best_mape": 2.27,
-  "best_r2": 0.9699,
+  "best_rmse": 1.17,
+  "best_mape": 2.42,
+  "best_r2": 0.9849,
   "all_results": {
     "GBM": {
       "name": "GBM",
-      "mae": 0.82,
-      "rmse": 1.21,
-      "mape": 2.49,
-      "r2": 0.9838,
-      "accuracy": 97.5
+      "mae": 0.8,
+      "rmse": 1.17,
+      "mape": 2.42,
+      "r2": 0.9849,
+      "accuracy": 97.6
     },
     "RF": {
       "name": "RF",
-      "mae": 1.32,
-      "rmse": 1.87,
-      "mape": 3.88,
+      "mae": 1.33,
+      "rmse": 1.86,
+      "mape": 3.94,
       "r2": 0.9614,
       "accuracy": 96.1
     },
@@ -139,8 +139,8 @@
       "paper_prior": "RF",
       "method": "data_verified",
       "all_mae": {
-        "GBM": 1.13,
-        "RF": 1.19,
+        "GBM": 1.02,
+        "RF": 1.15,
         "KNN": 2.34,
         "Ridge": 1.81,
         "DT": 1.28
@@ -153,8 +153,8 @@
       "paper_prior": "GBM",
       "method": "data_verified",
       "all_mae": {
-        "GBM": 0.76,
-        "RF": 1.35,
+        "GBM": 0.77,
+        "RF": 1.37,
         "KNN": 3.86,
         "Ridge": 1.74,
         "DT": 0.47
@@ -167,8 +167,8 @@
       "paper_prior": "GBM",
       "method": "data_verified",
       "all_mae": {
-        "GBM": 0.99,
-        "RF": 2.22,
+        "GBM": 1.0,
+        "RF": 2.23,
         "KNN": 5.98,
         "Ridge": 2.6,
         "DT": 1.3
@@ -181,8 +181,8 @@
       "paper_prior": "RF",
       "method": "data_verified",
       "all_mae": {
-        "GBM": 0.38,
-        "RF": 0.54,
+        "GBM": 0.41,
+        "RF": 0.58,
         "KNN": 2.23,
         "Ridge": 1.4,
         "DT": 0.17
@@ -196,25 +196,25 @@
     "Orthopaedic": "DT"
   },
   "feature_importance": {
-    "day_of_week": 0.0834296740106965,
-    "month": 0.011085235944315222,
-    "day_of_month": 0.00955083557085439,
-    "lagged_arrivals": 0.0411287669143197,
-    "revisit_rate": 0.5563687054032811,
-    "holiday": 0.0007554033623143318,
+    "day_of_week": 0.08380560911507316,
+    "month": 0.012115073083936632,
+    "day_of_month": 0.009471644853327386,
+    "lagged_arrivals": 0.04048419222925893,
+    "revisit_rate": 0.5587482627560011,
+    "holiday": 0.001023875958387567,
     "hour_of_day": 0.0,
     "morning_shift": 0.0,
-    "temperature": 0.014752981738786466,
-    "air_quality": 0.019004642243939968,
-    "rainfall": 0.010673361911316362,
-    "seasonal_prior": 0.0079829188472035,
-    "doctor_load": 0.18793068257664372,
-    "weekend_flag": 0.0033863216002217858,
-    "peak_month_flag": 0.005416631476789132,
-    "early_month_flag": 0.0016074048242479839,
-    "lagged_ratio": 0.04692643357506999
+    "temperature": 0.015809722720489673,
+    "air_quality": 0.019521324445906086,
+    "rainfall": 0.010770507772715562,
+    "seasonal_prior": 0.007710160881953057,
+    "doctor_load": 0.18446997800683496,
+    "weekend_flag": 0.003536685535204603,
+    "peak_month_flag": 0.0051713973551728715,
+    "early_month_flag": 0.001542852832626547,
+    "lagged_ratio": 0.045818712453112
   },
-  "training_time_sec": 2.66,
+  "training_time_sec": 1.44,
   "gpu_used": "NVIDIA GeForce RTX 3050 6GB Laptop GPU, 6144 MiB",
   "cpu_cores": 16
 }

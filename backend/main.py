@@ -2,6 +2,7 @@ import random
 import time
 import uuid
 import os
+import math
 from pathlib import Path
 from datetime import datetime
 
@@ -22,6 +23,12 @@ class HospitalRegister(BaseModel):
 class PridictData(BaseModel):
     hospital_id: str
     date: str
+
+
+class ForecastRequest(BaseModel):
+    hospital_id: str
+    start: str
+    days: int = 3
 
 
 class CapacityUpdate(BaseModel):
@@ -374,6 +381,19 @@ def predict_capacity(data: PridictData):
     return run_hospital_prediction(data.hospital_id, data.date)
 
 
+@app.post("/api/hospital/forecast")
+def forecast_capacity(data: ForecastRequest):
+    if data.days < 1 or data.days > 3:
+        raise HTTPException(status_code=422, detail="Forecast horizon must be between 1 and 3 days")
+    global _prediction_training_path
+    path = prediction_csv_for(data.hospital_id)
+    if _prediction_training_path != path:
+        coree.run_training(csv_path=path)
+        _prediction_training_path = path
+    results = coree.forecast_range(days=data.days, start=data.start)
+    return {"hospital_id": data.hospital_id, "days": data.days, "forecasts": results, "model": results[0]["prediction"]["model_used"] if results else None}
+
+
 @app.get("/api/hospital/info/{hospital_id}")
 def hospital_info(hospital_id: str):
     info = KNOWN_HOSPITALS.get(hospital_id)
@@ -422,7 +442,25 @@ def surge_alerts(hospital_id: str = "hospital123"):
 
 @app.get("/api/resource/pool")
 def resource_pool(hospital_id: str = "hospital123"):
-    return _RESOURCE_POOL
+    conn, cursor = get_db()
+    origin = cursor.execute("SELECT lat, lng FROM hospitals WHERE id=?", (hospital_id,)).fetchone()
+    cutoff = int(time.time()) - 30
+    rows = cursor.execute("""SELECT h.id, h.name, h.location, h.lat, h.lng, h.logo_url,
+        CASE WHEN EXISTS (SELECT 1 FROM hospital_sessions s WHERE s.hospital_id=h.id AND s.signed_out=0 AND s.last_seen>=?) THEN 1 ELSE 0 END active,
+        r.resource_type, r.available
+        FROM hospitals h LEFT JOIN resources r ON r.hospital_id=h.id WHERE h.id<>? ORDER BY h.name""", (cutoff, hospital_id)).fetchall()
+    conn.close()
+    grouped = {}
+    for row in rows:
+        item = grouped.setdefault(row[0], {"hospital_id": row[0], "hospital": row[1], "location": row[2], "lat": row[3], "lng": row[4], "logo_url": row[5], "active": bool(row[6]), "resources": []})
+        if row[7]: item["resources"].append({"type": row[7], "available": row[8], "icon": "•"})
+    for item in grouped.values():
+        if origin and item["lat"] is not None and item["lng"] is not None:
+            lat1, lon1, lat2, lon2 = map(math.radians, [origin[0], origin[1], item["lat"], item["lng"]])
+            a = math.sin((lat2-lat1)/2)**2 + math.cos(lat1)*math.cos(lat2)*math.sin((lon2-lon1)/2)**2
+            item["distance_km"] = round(6371 * 2 * math.asin(math.sqrt(a)), 1)
+        else: item["distance_km"] = None
+    return list(grouped.values())
 
 
 @app.post("/api/hospital/register")
@@ -457,9 +495,9 @@ def open_requests(department: str = None, carematrix_session: str | None = Cooki
     if carematrix_session:
         recipient_id = session_hospital(carematrix_session)["hospital_id"]
     if recipient_id and department:
-        cursor.execute("SELECT p.* FROM patients p JOIN transfer_invitations i ON i.transfer_id=p.id WHERE p.status='open' AND p.department=? AND i.recipient_hospital_id=? AND i.response IN ('pending','accepted')", (department, recipient_id))
+        cursor.execute("SELECT p.*, i.response AS invitation_response FROM patients p JOIN transfer_invitations i ON i.transfer_id=p.id WHERE p.status='open' AND p.department=? AND i.recipient_hospital_id=? AND i.response IN ('pending','accepted','rejected') AND NOT EXISTS (SELECT 1 FROM dismissed_items d WHERE d.hospital_id=? AND d.entity_type='transfer' AND d.entity_id=p.id)", (department, recipient_id, recipient_id))
     elif recipient_id:
-        cursor.execute("SELECT p.* FROM patients p JOIN transfer_invitations i ON i.transfer_id=p.id WHERE p.status='open' AND i.recipient_hospital_id=? AND i.response IN ('pending','accepted')", (recipient_id,))
+        cursor.execute("SELECT p.*, i.response AS invitation_response FROM patients p JOIN transfer_invitations i ON i.transfer_id=p.id WHERE p.status='open' AND i.recipient_hospital_id=? AND i.response IN ('pending','accepted','rejected') AND NOT EXISTS (SELECT 1 FROM dismissed_items d WHERE d.hospital_id=? AND d.entity_type='transfer' AND d.entity_id=p.id)", (recipient_id, recipient_id))
     elif department:
         cursor.execute(
             "SELECT * FROM patients WHERE status='open' AND department=?", (department,)

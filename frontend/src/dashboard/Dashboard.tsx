@@ -11,6 +11,9 @@ import {
   getAcceptanceStatus,
   getHospitalInfo,
   getSurgeAlerts,
+  getIncomingResources,
+  respondToIncomingResource,
+  dismissDashboardItem,
 } from "../api";
 import type { SurgeAlert } from "../api";
 import { useHospital } from "../HospitalContext";
@@ -48,6 +51,7 @@ type RegisteredPatient = {
   matches: { hospital_id: string; name: string; decided: boolean }[];
   confirmed: string | null;
 };
+type IncomingResource = { id: string; resource_type: string; quantity: number; requester_name: string; response: string; status: string };
 
 function nowTime() {
   return new Date().toLocaleTimeString([], {
@@ -70,6 +74,7 @@ function Dashboard() {
   const [registered, setRegistered] = useState<RegisteredPatient[]>([]);
   const [surgeAlerts, setSurgeAlerts] = useState<SurgeAlert[]>([]);
   const [deniedNotifs, setDeniedNotifs] = useState<string[]>([]);
+  const [resourceRequests, setResourceRequests] = useState<IncomingResource[]>([]);
 
   const seenIds = useRef<Set<string>>(new Set());
   const ownPatientIds = useRef<Set<string>>(new Set());
@@ -85,6 +90,17 @@ function Dashboard() {
   pendingTransfersRef.current = transfers.filter(
     (t) => t.status === "ACCEPTED_PENDING",
   );
+
+  useEffect(() => {
+    if (!hospitalId) return;
+    try {
+      setTransfers(JSON.parse(localStorage.getItem(`carematrix_transfers_${hospitalId}`) ?? "[]"));
+      setRegistered(JSON.parse(localStorage.getItem(`carematrix_registered_${hospitalId}`) ?? "[]"));
+    } catch { /* ignore malformed demo storage */ }
+  }, [hospitalId]);
+
+  useEffect(() => { if (hospitalId) localStorage.setItem(`carematrix_transfers_${hospitalId}`, JSON.stringify(transfers)); }, [hospitalId, transfers]);
+  useEffect(() => { if (hospitalId) localStorage.setItem(`carematrix_registered_${hospitalId}`, JSON.stringify(registered)); }, [hospitalId, registered]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -132,16 +148,9 @@ function Dashboard() {
 
     const poll = async () => {
       const open = await getOpenRequests().catch(() => []);
+      const resources = await getIncomingResources().catch(() => []);
+      setResourceRequests((prev) => [...resources, ...prev.filter((old) => !resources.some((item) => item.id === old.id))]);
       const openIds = new Set(open.map((r) => r.id));
-
-      setTransfers((prev) =>
-        prev.filter((t) => {
-          if (t.status === "ACCEPTED_PENDING") return true;
-          if (t.status === "CONFIRMED" || t.status === "DENIED") return true;
-          if (t.status !== "PENDING") return false;
-          return openIds.has(t.id);
-        }),
-      );
 
       const fresh = open.filter(
         (r) => !seenIds.current.has(r.id) && !ownPatientIds.current.has(r.id),
@@ -160,7 +169,7 @@ function Dashboard() {
             status: "PENDING" as const,
             receivedAt: nowTime(),
           })),
-          ...prev,
+          ...prev.filter((item) => !openIds.has(item.id) || item.status !== "PENDING"),
         ].slice(0, 50),
       );
     };
@@ -169,6 +178,19 @@ function Dashboard() {
     const iv = setInterval(poll, 3000);
     return () => clearInterval(iv);
   }, []);
+
+  const handleResourceDecision = async (request: IncomingResource, response: "accepted" | "rejected") => {
+    try {
+      const result = await respondToIncomingResource(request.id, response);
+      setResourceRequests((prev) => prev.map((item) => item.id === request.id ? { ...item, response: result.status, status: result.status } : item));
+    } catch (error) { window.alert(error instanceof Error ? error.message : "Unable to respond to resource request"); }
+  };
+
+  const dismissItem = async (type: "transfer" | "resource", id: string) => {
+    try { await dismissDashboardItem(type, id); } catch { return; }
+    if (type === "transfer") setTransfers((prev) => prev.filter((item) => item.id !== id));
+    else setResourceRequests((prev) => prev.filter((item) => item.id !== id));
+  };
 
   // ── Poll acceptance-status for ACCEPTED_PENDING transfers (Hospital B) ────
   // Reads from pendingTransfersRef — NOT from transfers state — so this
@@ -205,10 +227,6 @@ function Dashboard() {
               r.id === t.id ? { ...r, status: "CONFIRMED" as const } : r,
             ),
           );
-          setTimeout(
-            () => setTransfers((prev) => prev.filter((r) => r.id !== t.id)),
-            3000,
-          );
         } else if (res.status === "denied_by_source") {
           setDeniedNotifs((prev) => [
             `Transfer denied by source — ${t.department} (${t.priority})`,
@@ -218,10 +236,6 @@ function Dashboard() {
             prev.map((r) =>
               r.id === t.id ? { ...r, status: "DENIED" as const } : r,
             ),
-          );
-          setTimeout(
-            () => setTransfers((prev) => prev.filter((r) => r.id !== t.id)),
-            4000,
           );
         }
       }
@@ -330,10 +344,6 @@ function Dashboard() {
         prev.map((r) =>
           r.id === transfer.id ? { ...r, status: "DECLINED" as const } : r,
         ),
-      );
-      setTimeout(
-        () => setTransfers((prev) => prev.filter((r) => r.id !== transfer.id)),
-        1500,
       );
       }
     } catch (error) {
@@ -452,7 +462,6 @@ function Dashboard() {
             >
               Inventory Management
             </button>
-            <button className="mini-action">Emergency Alert</button>
             <button
               className="mini-action"
               onClick={() => navigate("/heatmap")}
@@ -465,6 +474,7 @@ function Dashboard() {
             >
               Surge Prediction
             </button>
+            <button className="mini-action" onClick={() => navigate("/activity")}>Transfers & Activity</button>
           </div>
         </section>
 
@@ -677,10 +687,13 @@ function Dashboard() {
                         </button>
                       </div>
                     )}
+                    <button className="dismiss-request" aria-label="Dismiss request" onClick={() => dismissItem("transfer", r.id)}>×</button>
                   </div>
                 ))}
               </div>
             </div>
+
+            <div className="notif-block"><h3>Incoming Resource Requests</h3><div className="notif-scroll">{resourceRequests.length === 0 && <p className="notif-empty">No incoming resource requests</p>}{resourceRequests.map((request) => <div className="notif-item" key={request.id}><div className="notif-details"><strong>{request.resource_type}</strong><p className="notif-sub">{request.quantity} requested by {request.requester_name}</p><p className="notif-status">{request.status === "fulfilled" ? "✓ Matched to this hospital" : request.response === "rejected" ? "✕ Declined" : "Awaiting response"}</p></div>{request.response === "pending" && <div className="notif-actions"><button className="notif-btn-admit" onClick={() => handleResourceDecision(request, "accepted")}>✓ Accept</button><button className="notif-btn-decline" onClick={() => handleResourceDecision(request, "rejected")}>✕ Reject</button></div>}<button className="dismiss-request" aria-label="Dismiss resource request" onClick={() => dismissItem("resource", request.id)}>×</button></div>)}</div></div>
 
             {/* Patient Status — outgoing (Hospital A) + locally admitted */}
             <div className="notif-block">

@@ -51,6 +51,10 @@ def migrate():
       event_type TEXT NOT NULL, actor_hospital_id TEXT, actor_account_id TEXT,
       created_at INTEGER NOT NULL, metadata TEXT
     );
+    CREATE TABLE IF NOT EXISTS dismissed_items (
+      hospital_id TEXT NOT NULL, entity_type TEXT NOT NULL, entity_id TEXT NOT NULL,
+      dismissed_at INTEGER NOT NULL, PRIMARY KEY (hospital_id, entity_type, entity_id)
+    );
     CREATE INDEX IF NOT EXISTS idx_sessions_presence ON hospital_sessions(hospital_id, last_seen, signed_out);
     CREATE INDEX IF NOT EXISTS idx_transfer_invites ON transfer_invitations(transfer_id, recipient_hospital_id);
     CREATE INDEX IF NOT EXISTS idx_resource_invites ON resource_invitations(request_id, recipient_hospital_id);
@@ -58,7 +62,8 @@ def migrate():
     for table, additions in {
         "hospitals": [("location", "TEXT"), ("logo_url", "TEXT"), ("created_at", "INTEGER")],
         "patients": [("requester_hospital_id", "TEXT"), ("created_at", "INTEGER"), ("updated_at", "INTEGER")],
-        "resource_requests": [("requester_hospital_id", "TEXT"), ("selected_provider_id", "TEXT"), ("created_at", "INTEGER"), ("updated_at", "INTEGER")],
+        "patients": [("transfer_stage", "TEXT")],
+        "resource_requests": [("requester_hospital_id", "TEXT"), ("selected_provider_id", "TEXT"), ("created_at", "INTEGER"), ("updated_at", "INTEGER"), ("fulfillment_stage", "TEXT")],
     }.items():
         table_exists_sql = "SELECT 1 FROM information_schema.tables WHERE table_schema=current_schema() AND table_name=?" if USE_POSTGRES else "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?"
         if not conn.execute(table_exists_sql, (table,)).fetchone():
@@ -96,6 +101,12 @@ def session_hospital(session_id: Optional[str]):
     return row
 
 
+def hospital_payload(row):
+    payload = dict(row)
+    payload["hospital_id"] = payload.get("hospital_id", payload.get("id"))
+    return payload
+
+
 class LoginData(BaseModel):
     username: str
     password: str
@@ -116,6 +127,19 @@ def audit(conn, entity_type, entity_id, event_type, actor=None, metadata=None):
                   now(), json.dumps(metadata or {})))
 
 
+TRANSFER_STAGES = ["accepted", "ambulance_assigned", "ambulance_dispatched", "patient_picked_up", "in_transit", "arrived", "admitted"]
+RESOURCE_STAGES = ["accepted", "preparing", "dispatched", "in_transit", "delivered", "receipt_confirmed"]
+
+
+def activity_actor_access(conn, actor, entity_type, entity_id):
+    if entity_type == "transfer":
+        row = conn.execute("SELECT requester_hospital_id FROM patients WHERE id=?", (entity_id,)).fetchone()
+        if row and row[0] == actor["hospital_id"]: return True
+        return bool(conn.execute("SELECT 1 FROM transfer_invitations WHERE transfer_id=? AND recipient_hospital_id=? AND response='accepted'", (entity_id, actor["hospital_id"])).fetchone())
+    row = conn.execute("SELECT requester_hospital_id, selected_provider_id FROM resource_requests WHERE id=?", (entity_id,)).fetchone()
+    return bool(row and actor["hospital_id"] in (row[0], row[1]))
+
+
 @router.post("/api/auth/login")
 def login(data: LoginData, response: Response):
     conn = db()
@@ -134,13 +158,13 @@ def login(data: LoginData, response: Response):
                  (sid, account["id"], account["hospital_id"], t, t))
     conn.commit(); conn.close()
     response.set_cookie(SESSION_COOKIE, sid, httponly=True, samesite="lax", max_age=86400)
-    return {"hospital": dict(hospital), "username": account["username"], "role": account["role"]}
+    return {"hospital": hospital_payload(hospital), "username": account["username"], "role": account["role"]}
 
 
 @router.get("/api/auth/me")
 def me(carematrix_session: Optional[str] = Cookie(default=None)):
     row = session_hospital(carematrix_session)
-    return {"hospital": {k: row[k] for k in ("hospital_id", "name", "location", "lat", "lng", "logo_url")},
+    return {"hospital": {**{k: row[k] for k in ("hospital_id", "name", "location", "lat", "lng", "logo_url")}},
             "username": row["username"], "role": row["role"]}
 
 
@@ -182,7 +206,9 @@ def incoming_transfers(carematrix_session: Optional[str] = Cookie(default=None))
         h.id requester_id, h.name requester_name, h.location requester_location, h.logo_url requester_logo,
         i.response
         FROM transfer_invitations i JOIN patients p ON p.id=i.transfer_id JOIN hospitals h ON h.id=p.requester_hospital_id
-        WHERE i.recipient_hospital_id=? AND p.status IN ('open','broadcast') ORDER BY p.created_at DESC""", (actor["hospital_id"],)).fetchall()
+        WHERE i.recipient_hospital_id=? AND p.status IN ('open','broadcast')
+          AND NOT EXISTS (SELECT 1 FROM dismissed_items d WHERE d.hospital_id=? AND d.entity_type='transfer' AND d.entity_id=p.id)
+        ORDER BY p.created_at DESC""", (actor["hospital_id"], actor["hospital_id"])).fetchall()
     conn.close(); return [dict(r) for r in rows]
 
 
@@ -226,7 +252,9 @@ def incoming_resources(carematrix_session: Optional[str] = Cookie(default=None))
         h.id requester_id, h.name requester_name, h.logo_url requester_logo, i.response
         FROM resource_invitations i JOIN resource_requests r ON r.id=i.request_id
         JOIN hospitals h ON h.id=r.requester_hospital_id
-        WHERE i.recipient_hospital_id=? AND r.status='open' ORDER BY r.created_at DESC""", (actor["hospital_id"],)).fetchall()
+        WHERE i.recipient_hospital_id=? AND r.status='open'
+          AND NOT EXISTS (SELECT 1 FROM dismissed_items d WHERE d.hospital_id=? AND d.entity_type='resource' AND d.entity_id=r.id)
+        ORDER BY r.created_at DESC""", (actor["hospital_id"], actor["hospital_id"])).fetchall()
     conn.close(); return [dict(r) for r in rows]
 
 
@@ -247,8 +275,24 @@ def resource_response(request_id: str, data: ResponseData, carematrix_session: O
     actor = session_hospital(carematrix_session); conn = db()
     inv = conn.execute("SELECT * FROM resource_invitations WHERE request_id=? AND recipient_hospital_id=?", (request_id, actor["hospital_id"])).fetchone()
     if not inv: conn.close(); raise HTTPException(404, "Invitation not found")
-    conn.execute("UPDATE resource_invitations SET response=?, responded_at=? WHERE id=?", (data.response, now(), inv["id"]))
-    audit(conn, "resource", request_id, data.response, actor); conn.commit(); conn.close(); return {"status": data.response}
+    if data.response == "accepted":
+        conn.execute("UPDATE resource_requests SET status='fulfilled', selected_provider_id=?, updated_at=? WHERE id=? AND status='open'", (actor["hospital_id"], now(), request_id))
+        selected = conn.execute("SELECT selected_provider_id FROM resource_requests WHERE id=?", (request_id,)).fetchone()
+        if selected and selected[0] == actor["hospital_id"]:
+            conn.execute("UPDATE resource_invitations SET response='accepted', responded_at=? WHERE id=?", (now(), inv["id"]))
+            conn.execute("UPDATE resource_invitations SET response='closed', responded_at=? WHERE request_id=? AND id<>? AND response='pending'", (now(), request_id, inv["id"]))
+            audit(conn, "resource", request_id, "provider_selected", actor)
+            conn.commit(); conn.close(); return {"status": "fulfilled", "provider_id": actor["hospital_id"]}
+        conn.close(); return {"status": "already_fulfilled", "provider_id": selected[0] if selected else None}
+    conn.execute("UPDATE resource_invitations SET response='rejected', responded_at=? WHERE id=?", (now(), inv["id"]))
+    audit(conn, "resource", request_id, "rejected", actor); conn.commit(); conn.close(); return {"status": "rejected"}
+
+
+@router.post("/api/dashboard/dismiss")
+def dismiss_dashboard_item(entity_type: str, entity_id: str, carematrix_session: Optional[str] = Cookie(default=None)):
+    actor = session_hospital(carematrix_session); conn = db()
+    conn.execute("INSERT INTO dismissed_items (hospital_id, entity_type, entity_id, dismissed_at) VALUES (?, ?, ?, ?) ON CONFLICT (hospital_id, entity_type, entity_id) DO NOTHING", (actor["hospital_id"], entity_type, entity_id, now()))
+    conn.commit(); conn.close(); return {"status": "dismissed"}
 
 
 @router.post("/api/resource/{request_id}/select")

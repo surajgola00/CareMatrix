@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { createResourceRequest, getPrediction, getResourcePool } from "../api";
+import { createResourceRequest, getForecast, getResourcePool } from "../api";
+import type { PredictionResponse } from "../api";
 import type { ResourcePoolEntry } from "../api";
 import { useHospital } from "../HospitalContext";
 
@@ -47,6 +48,7 @@ export default function InventoryManagement() {
     date: string;
   } | null>(null);
   const [predictionError, setPredictionError] = useState<string | null>(null);
+  const [forecast, setForecast] = useState<PredictionResponse[]>([]);
 
   const [resourcePool, setResourcePool] = useState<ResourcePoolEntry[]>([]);
   const [expandedPool, setExpandedPool] = useState<string | null>(null);
@@ -67,15 +69,18 @@ export default function InventoryManagement() {
     setPredictionError(null);
     let data;
     try {
-      data = await getPrediction(today(), hospitalId);
+      const result = await getForecast(today(), hospitalId, 3);
+      data = result.forecasts;
     } catch (error) {
       setPredictionError(error instanceof Error ? error.message : "Prediction unavailable");
       setPredInfo(null);
       setLoading(false);
       return;
     }
-    const patientCount = data.prediction.predicted;
-    setPredInfo({ predicted: data.prediction.predicted, confidence_pct: data.prediction.confidence_pct, date: data.prediction.date });
+    setForecast(data);
+    const patientCount = Math.max(...data.map((item) => item.prediction.predicted));
+    const peak = data.reduce((best, item) => item.prediction.predicted > best.prediction.predicted ? item : best, data[0]);
+    setPredInfo({ predicted: peak.prediction.predicted, confidence_pct: peak.prediction.confidence_pct, date: peak.prediction.date });
     const predMap: Record<string, number> = {};
     const statusMap: Record<string, string> = {};
     const newBill: BillItem[] = [];
@@ -110,8 +115,10 @@ export default function InventoryManagement() {
     setOrderDone(true);
   };
 
-  const handleRequestFromPool = (hospitalId_: string, resourceType: string) => {
+  const handleRequestFromPool = async (hospitalId_: string, resourceType: string) => {
     const key = `${hospitalId_}::${resourceType}`;
+    if (!hospitalId) return;
+    await createResourceRequest(hospitalId, resourceType, 1);
     setRequestedItems((prev) => new Set([...prev, key]));
   };
 
@@ -165,6 +172,12 @@ export default function InventoryManagement() {
             {loading ? "Fetching…" : "Predict Resources"}
           </button>
 
+          {forecast.length > 0 && (
+            <div className="pred-info-card">
+              <p className="pred-info-label">Next 24–72 hours</p>
+              {forecast.map((item) => <p className="pred-info-sub" key={item.prediction.date}>{item.prediction.date}: <strong>{item.prediction.predicted} patients</strong> ({item.prediction.low}–{item.prediction.high})</p>)}
+            </div>
+          )}
           {predInfo && (
             <div className="pred-info-card">
               <p className="pred-info-label">Based on prediction</p>
@@ -218,7 +231,7 @@ export default function InventoryManagement() {
                     }
                   >
                     <span className="pool-hosp-name">{entry.hospital}</span>
-                    <span className="pool-dist">{entry.distance_km} km</span>
+                    <span className={`pool-dist ${entry.active ? "pool-active" : "pool-inactive"}`}>{entry.active ? "ACTIVE" : "OFFLINE"} · {entry.distance_km ?? "—"} km</span>
                     <span className="pool-chevron">{expandedPool === entry.hospital_id ? "▲" : "▼"}</span>
                   </button>
                   {expandedPool === entry.hospital_id && (
@@ -233,8 +246,8 @@ export default function InventoryManagement() {
                             <span className="pool-avail">{res.available} avail.</span>
                             <button
                               className={`pool-request-btn ${requested ? "pool-requested" : ""}`}
-                              disabled={requested}
-                              onClick={() => handleRequestFromPool(entry.hospital_id, res.type)}
+                              disabled={requested || !entry.active || res.available <= 0}
+                              onClick={() => handleRequestFromPool(entry.hospital_id, res.type).catch(() => {})}
                             >
                               {requested ? "✓ Requested" : "Request"}
                             </button>

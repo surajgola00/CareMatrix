@@ -69,7 +69,7 @@ export async function getOpenRequests(department?: string) {
     lat: row[3] as number,
     lng: row[4] as number,
     assigned: row[5] as number,
-    status: row[6] as string,
+    status: row[7] === "accepted" ? "ACCEPTED_PENDING" : row[7] === "rejected" ? "DECLINED" : row[6] as string,
   }));
 }
 
@@ -183,6 +183,23 @@ export async function respondToResource(
   return r.json();
 }
 
+export async function getIncomingResources() {
+  const r = await fetch(`${BASE}/api/resource/incoming`, { credentials: "include" });
+  if (!r.ok) throw new Error("Unable to load resource requests");
+  return r.json() as Promise<{ id: string; resource_type: string; quantity: number; status: string; requester_name: string; response: string }[]>;
+}
+
+export async function respondToIncomingResource(request_id: string, response: "accepted" | "rejected") {
+  const r = await fetch(`${BASE}/api/resource/${request_id}/respond`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ response }) });
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail ?? "Unable to respond to resource request");
+  return r.json() as Promise<{ status: string; provider_id?: string }>;
+}
+
+export async function dismissDashboardItem(entity_type: "transfer" | "resource", entity_id: string) {
+  const r = await fetch(`${BASE}/api/dashboard/dismiss?entity_type=${entity_type}&entity_id=${encodeURIComponent(entity_id)}`, { method: "POST", credentials: "include" });
+  if (!r.ok) throw new Error("Unable to dismiss item");
+}
+
 export async function getHospitalInfo(hospital_id: string): Promise<{
   id: string;
   name: string;
@@ -214,6 +231,8 @@ export type ResourcePoolEntry = {
   hospital: string;
   hospital_id: string;
   distance_km: number;
+  active: boolean;
+  logo_url?: string;
   resources: { type: string; available: number; icon: string }[];
 };
 
@@ -320,6 +339,12 @@ export async function getPrediction(
   });
   if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail ?? "Prediction unavailable");
   return r.json();
+}
+
+export async function getForecast(start: string, hospital_id: string, days = 3) {
+  const r = await fetch(`${BASE}/api/hospital/forecast`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ start, hospital_id, days }) });
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail ?? "Forecast unavailable");
+  return r.json() as Promise<{ hospital_id: string; days: number; model: string; forecasts: PredictionResponse[] }>;
 }
 
 export async function denyResponse(patient_id: string, hospital_id: string) {

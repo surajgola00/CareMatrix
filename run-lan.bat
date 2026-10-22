@@ -20,7 +20,7 @@ echo.
 echo Close any older CareMatrix server windows before starting a new demo session.
 
 netstat -ano | findstr /C:"0.0.0.0:8000" | findstr /C:"LISTENING" >nul
-if errorlevel 1 start "CareMatrix Backend" powershell -NoExit -ExecutionPolicy Bypass -Command "Set-Location '%~dp0backend'; & '.venv\Scripts\python.exe' -m uvicorn main:app --host 0.0.0.0 --port 8000"
+if errorlevel 1 start "CareMatrix Backend" powershell -NoExit -ExecutionPolicy Bypass -Command "Set-Location '%~dp0backend'; & '.venv\Scripts\activate'; & python.exe -m uvicorn main:app --host 0.0.0.0 --port 8000"
 if not errorlevel 1 echo Backend already listening on port 8000; keeping it.
 netstat -ano | findstr /C:"0.0.0.0:5173" | findstr /C:"LISTENING" >nul
 if errorlevel 1 start "CareMatrix Frontend" powershell -NoExit -ExecutionPolicy Bypass -Command "$env:VITE_API_BASE='http://%LAN_IP%:8000'; Set-Location '%~dp0frontend'; npm run dev -- --host 0.0.0.0 --port 5173"
