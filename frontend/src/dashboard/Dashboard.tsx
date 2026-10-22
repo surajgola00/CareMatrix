@@ -14,6 +14,7 @@ import {
 } from "../api";
 import type { SurgeAlert } from "../api";
 import { useHospital } from "../HospitalContext";
+import { hospitalLogo } from "../hospitalLogos";
 
 type TransferStatus =
   | "PENDING"
@@ -58,7 +59,7 @@ function nowTime() {
 function Dashboard() {
   const [ribbonCycle, setRibbonCycle] = useState(0);
   const navigate = useNavigate();
-  const { hospitalId } = useHospital();
+  const { hospitalId, hospital, clearHospital } = useHospital();
 
   const [hospitalName, setHospitalName] = useState("CareMatrix Hospital");
   const [hospitalShort, setHospitalShort] = useState("CM");
@@ -100,6 +101,10 @@ function Dashboard() {
   // ── Hospital identity ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!hospitalId) return;
+    if (hospital) {
+      setHospitalName(hospital.name);
+      setHospitalLocation(hospital.location ?? "");
+    }
     getHospitalInfo(hospitalId)
       .then((info) => {
         setHospitalName(info.name);
@@ -107,7 +112,7 @@ function Dashboard() {
         setHospitalLocation(info.location);
       })
       .catch(() => {});
-  }, [hospitalId]);
+  }, [hospitalId, hospital]);
 
   // ── Surge alerts (refresh every 5 min) ────────────────────────────────────
   useEffect(() => {
@@ -408,7 +413,7 @@ function Dashboard() {
     >
       <header className="dashboard-topbar">
         <div className="brand-block">
-          <div className="brand-logo" />
+          <img className="brand-logo" src={hospitalLogo(hospitalId)} alt={`${hospitalName} logo`} onError={(e) => { e.currentTarget.src = "/favicon.svg"; }} />
           <div className="brand-text-block">
             <p className="dashboard-label">Hospital Management System</p>
             <h1>{hospitalName}</h1>
@@ -424,8 +429,7 @@ function Dashboard() {
           <button
             className="signout-button"
             onClick={() => {
-              localStorage.removeItem("cm_hospital_id");
-              navigate("/login");
+              clearHospital().then(() => navigate("/login")).catch(() => {});
             }}
           >
             Sign Out

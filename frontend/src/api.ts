@@ -1,5 +1,39 @@
 const BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8000";
 
+export type AuthHospital = {
+  hospital_id: string;
+  name: string;
+  location?: string;
+  lat?: number;
+  lng?: number;
+  logo_url?: string;
+};
+
+export async function login(username: string, password: string) {
+  const r = await fetch(`${BASE}/api/auth/login`, {
+    method: "POST", credentials: "include", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail ?? "Login failed");
+  return r.json() as Promise<{ hospital: AuthHospital; username: string; role: string }>;
+}
+
+export async function getCurrentUser() {
+  const r = await fetch(`${BASE}/api/auth/me`, { credentials: "include" });
+  if (!r.ok) return null;
+  return r.json() as Promise<{ hospital: AuthHospital; username: string; role: string }>;
+}
+
+export async function heartbeat() {
+  const r = await fetch(`${BASE}/api/auth/heartbeat`, { method: "POST", credentials: "include" });
+  if (!r.ok) throw new Error("Session heartbeat failed");
+}
+
+export async function logout() {
+  const r = await fetch(`${BASE}/api/auth/logout`, { method: "POST", credentials: "include" });
+  if (!r.ok) throw new Error("Logout failed");
+}
+
 export async function registerHospital(name: string, lat: number, lng: number) {
   const r = await fetch(`${BASE}/api/hospital/register`, {
     method: "POST",

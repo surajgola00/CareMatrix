@@ -1,33 +1,43 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { getCurrentUser, heartbeat, logout as apiLogout } from "./api";
+import type { AuthHospital } from "./api";
 
 type HospitalCtx = {
   hospitalId: string | null;
-  setHospitalId: (id: string) => void;
+  hospital: AuthHospital | null;
+  setHospital: (hospital: AuthHospital) => void;
+  clearHospital: () => Promise<void>;
+  authenticated: boolean;
 };
 
 const Ctx = createContext<HospitalCtx>({
   hospitalId: null,
-  setHospitalId: () => {},
+  hospital: null,
+  setHospital: () => {},
+  clearHospital: async () => {},
+  authenticated: false,
 });
 
 export function HospitalProvider({ children }: { children: ReactNode }) {
-  const [hospitalId, setHospitalIdState] = useState<string | null>(() =>
-    localStorage.getItem("cm_hospital_id"),
-  );
+  const [hospital, setHospitalState] = useState<AuthHospital | null>(null);
+  const [checked, setChecked] = useState(false);
 
-  const setHospitalId = (id: string) => {
-    localStorage.setItem("cm_hospital_id", id);
-    setHospitalIdState(id);
-  };
+  const setHospital = (value: AuthHospital) => setHospitalState(value);
+  const clearHospital = async () => { await apiLogout(); setHospitalState(null); };
 
   useEffect(() => {
-    const stored = localStorage.getItem("cm_hospital_id");
-    if (stored) setHospitalIdState(stored);
+    getCurrentUser().then((user) => setHospitalState(user?.hospital ?? null)).finally(() => setChecked(true));
   }, []);
 
+  useEffect(() => {
+    if (!hospital) return;
+    const id = window.setInterval(() => heartbeat().catch(() => setHospitalState(null)), 5000);
+    return () => window.clearInterval(id);
+  }, [hospital]);
+
   return (
-    <Ctx.Provider value={{ hospitalId, setHospitalId }}>
+    <Ctx.Provider value={{ hospitalId: hospital?.hospital_id ?? null, hospital, setHospital, clearHospital, authenticated: checked && !!hospital }}>
       {children}
     </Ctx.Provider>
   );

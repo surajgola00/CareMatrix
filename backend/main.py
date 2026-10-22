@@ -2,12 +2,14 @@ import random
 import sqlite3
 import time
 import uuid
+import os
 from datetime import datetime
 
 import PridictionModel.core as coree
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Cookie
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from mvp import router as mvp_router, migrate as mvp_migrate
 
 
 class HospitalRegister(BaseModel):
@@ -80,7 +82,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-DB_PATH = "carematrix.db"
+DB_PATH = os.getenv("CAREMATRIX_DB_PATH", "carematrix.db")
 
 
 def get_db():
@@ -155,6 +157,8 @@ def _seed_known():
 
 
 _seed_known()
+mvp_migrate()
+app.include_router(mvp_router)
 
 STATIC_HOSPITALS = [
     {
@@ -490,16 +494,35 @@ def hospital_respond(data: HospitalResponse):
 
 
 @app.post("/api/request")
-def create_request(data: PatientRequest):
+def create_request(data: PatientRequest, carematrix_session: str | None = Cookie(default=None)):
     conn, cursor = get_db()
     patient_id = str(uuid.uuid4())
+    requester_id = None
+    if carematrix_session:
+        try:
+            requester_id = session_hospital(carematrix_session)["hospital_id"]
+        except HTTPException:
+            conn.close()
+            raise
+    created = int(time.time())
     cursor.execute(
-        "INSERT INTO patients (id, department, priority, lat, lng, assigned, status) VALUES (?, ?, ?, ?, ?, 0, 'open')",
-        (patient_id, data.department, data.priority, data.lat, data.lng),
+        "INSERT INTO patients (id, department, priority, lat, lng, assigned, status, requester_hospital_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 0, 'open', ?, ?, ?)",
+        (patient_id, data.department, data.priority, data.lat, data.lng, requester_id, created, created),
     )
+    if requester_id:
+        cutoff = created - EXPIRY_SECONDS
+        eligible = cursor.execute("""SELECT h.id FROM hospitals h
+            WHERE h.id != ? AND EXISTS (SELECT 1 FROM hospital_sessions s WHERE s.hospital_id=h.id AND s.signed_out=0 AND s.last_seen>=?)
+            AND (NOT EXISTS (SELECT 1 FROM capacity c WHERE c.hospital_id=h.id AND c.department=? )
+                 OR EXISTS (SELECT 1 FROM capacity c WHERE c.hospital_id=h.id AND c.department=? AND c.available>0))""",
+            (requester_id, cutoff, data.department, data.department)).fetchall()
+        for row in eligible:
+            cursor.execute("INSERT OR IGNORE INTO transfer_invitations (id, transfer_id, recipient_hospital_id, created_at) VALUES (?, ?, ?, ?)",
+                           (str(uuid.uuid4()), patient_id, row[0], created))
+        mvp_audit(conn, "transfer", patient_id, "broadcast", {"hospital_id": requester_id, "account_id": None}, {"notified": len(eligible)})
     conn.commit()
     conn.close()
-    return {"patient_id": patient_id}
+    return {"patient_id": patient_id, "notified": len(eligible) if requester_id else 0}
 
 
 @app.get("/api/patient/responses")
@@ -569,22 +592,25 @@ def get_result(patient_id: str):
 
 
 @app.post("/api/resource/request")
-def create_resource_request(data: ResourceRequest):
+def create_resource_request(data: ResourceRequest, carematrix_session: str | None = Cookie(default=None)):
     conn, cursor = get_db()
     request_id = str(uuid.uuid4())
+    requester_id = data.hospital_id
+    if carematrix_session:
+        requester_id = session_hospital(carematrix_session)["hospital_id"]
+    created = int(time.time())
     cursor.execute(
-        "INSERT INTO resource_requests VALUES (?, ?, ?, ?, 'open', ?)",
-        (
-            request_id,
-            data.hospital_id,
-            data.resource_type,
-            data.quantity,
-            int(time.time()),
-        ),
+        "INSERT INTO resource_requests (id, requester_hospital_id, resource_type, quantity, status, timestamp, selected_provider_id, created_at, updated_at) VALUES (?, ?, ?, ?, 'open', ?, NULL, ?, ?)",
+        (request_id, requester_id, data.resource_type, data.quantity, created, created, created),
     )
+    if carematrix_session:
+        cutoff = created - EXPIRY_SECONDS
+        eligible = cursor.execute("SELECT h.id FROM hospitals h WHERE h.id != ? AND EXISTS (SELECT 1 FROM hospital_sessions s WHERE s.hospital_id=h.id AND s.signed_out=0 AND s.last_seen>=?)", (requester_id, cutoff)).fetchall()
+        for row in eligible:
+            cursor.execute("INSERT OR IGNORE INTO resource_invitations (id, request_id, recipient_hospital_id, created_at) VALUES (?, ?, ?, ?)", (str(uuid.uuid4()), request_id, row[0], created))
     conn.commit()
     conn.close()
-    return {"request_id": request_id}
+    return {"request_id": request_id, "notified": len(eligible) if carematrix_session else 0}
 
 
 @app.get("/api/resource/open")

@@ -1,0 +1,6 @@
+AGENTS.md
+CLAUDE.md
+/docs
+.neon
+node_modules/
+.env.local

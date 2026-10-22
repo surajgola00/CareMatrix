@@ -5,6 +5,7 @@ import HeatMapPage from "./heatmap/HeatMapPage";
 import Dashboard from "./dashboard/Dashboard";
 import InventoryManagement from "./dashboard/InventoryManagement";
 import PredictionPage from "./dashboard/Predictionpage";
+import Activity from "./activity/Activity";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/inventory" element={<InventoryManagement />} />
       <Route path="/prediction" element={<PredictionPage />} />
+      <Route path="/activity" element={<Activity />} />
     </Routes>
   );
 }
