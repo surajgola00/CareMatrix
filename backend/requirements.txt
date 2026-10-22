@@ -9,3 +9,4 @@ fastapi-cors
 joblib
 scikit-learn
 pandas
+psycopg[binary]

@@ -1,5 +1,4 @@
 import random
-import sqlite3
 import time
 import uuid
 import os
@@ -10,6 +9,7 @@ from fastapi import FastAPI, HTTPException, Cookie
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from mvp import router as mvp_router, migrate as mvp_migrate
+from storage import connect, init_schema, USE_POSTGRES
 
 
 class HospitalRegister(BaseModel):
@@ -82,50 +82,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-DB_PATH = os.getenv("CAREMATRIX_DB_PATH", "carematrix.db")
-
-
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+    conn = connect()
     return conn, conn.cursor()
 
 
-_conn = sqlite3.connect(DB_PATH)
-_conn.executescript("""
-CREATE TABLE IF NOT EXISTS hospitals (
-  id TEXT PRIMARY KEY, name TEXT, lat REAL, lng REAL, status TEXT
-);
-CREATE TABLE IF NOT EXISTS capacity (
-  hospital_id TEXT, department TEXT, total INTEGER, available INTEGER,
-  PRIMARY KEY (hospital_id, department)
-);
-CREATE TABLE IF NOT EXISTS patients (
-  id TEXT PRIMARY KEY, department TEXT, priority TEXT, lat REAL, lng REAL,
-  assigned INTEGER DEFAULT 0, status TEXT DEFAULT 'open'
-);
-CREATE TABLE IF NOT EXISTS responses (
-  id INTEGER PRIMARY KEY AUTOINCREMENT, patient_id TEXT,
-  hospital_id TEXT, status TEXT, timestamp INTEGER
-);
-CREATE TABLE IF NOT EXISTS assignments (
-  patient_id TEXT, hospital_id TEXT, timestamp INTEGER
-);
-CREATE TABLE IF NOT EXISTS resource_requests (
-  id TEXT PRIMARY KEY, requester_hospital_id TEXT, resource_type TEXT,
-  quantity INTEGER, status TEXT DEFAULT 'open', timestamp INTEGER
-);
-CREATE TABLE IF NOT EXISTS resource_responses (
-  id INTEGER PRIMARY KEY AUTOINCREMENT, request_id TEXT,
-  provider_hospital_id TEXT, status TEXT, timestamp INTEGER
-);
-CREATE TABLE IF NOT EXISTS resources (
-  hospital_id TEXT, resource_type TEXT, available INTEGER,
-  PRIMARY KEY (hospital_id, resource_type)
-);
-""")
-_conn.commit()
-_conn.close()
+init_schema()
 
 KNOWN_HOSPITALS = {
     "hospital123": {
@@ -149,8 +111,8 @@ def _seed_known():
     conn, cursor = get_db()
     for hid, info in KNOWN_HOSPITALS.items():
         cursor.execute(
-            "INSERT INTO hospitals (id, name, lat, lng, status) VALUES (?, ?, ?, ?, 'online') ON CONFLICT(id) DO UPDATE SET name=excluded.name, lat=excluded.lat, lng=excluded.lng, status='online'",
-            (hid, info["name"], info["lat"], info["lng"]),
+            "INSERT INTO hospitals (id, name, location, lat, lng, status) VALUES (?, ?, ?, ?, ?, 'online') ON CONFLICT(id) DO UPDATE SET name=excluded.name, location=excluded.location, lat=excluded.lat, lng=excluded.lng, status='online'",
+            (hid, info["name"], info["location"], info["lat"], info["lng"]),
         )
     conn.commit()
     conn.close()

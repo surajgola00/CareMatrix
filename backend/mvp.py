@@ -7,15 +7,14 @@ and must be replaced with password hashing before production use.
 import json
 import os
 import secrets
-import sqlite3
 import time
 import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Cookie, HTTPException, Response
 from pydantic import BaseModel, Field
+from storage import connect, USE_POSTGRES
 
-DB_PATH = os.getenv("CAREMATRIX_DB_PATH", "carematrix.db")
 SESSION_COOKIE = os.getenv("CAREMATRIX_SESSION_COOKIE", "carematrix_session")
 EXPIRY_SECONDS = int(os.getenv("CAREMATRIX_PRESENCE_EXPIRY_SECONDS", "30"))
 
@@ -23,9 +22,7 @@ router = APIRouter()
 
 
 def db():
-    conn = sqlite3.connect(DB_PATH, timeout=10)
-    conn.row_factory = sqlite3.Row
-    return conn
+    return connect()
 
 
 def migrate():
@@ -63,9 +60,13 @@ def migrate():
         "patients": [("requester_hospital_id", "TEXT"), ("created_at", "INTEGER"), ("updated_at", "INTEGER")],
         "resource_requests": [("requester_hospital_id", "TEXT"), ("selected_provider_id", "TEXT"), ("created_at", "INTEGER"), ("updated_at", "INTEGER")],
     }.items():
-        if not conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,)).fetchone():
+        table_exists_sql = "SELECT 1 FROM information_schema.tables WHERE table_schema=current_schema() AND table_name=?" if USE_POSTGRES else "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?"
+        if not conn.execute(table_exists_sql, (table,)).fetchone():
             continue
-        existing = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+        if USE_POSTGRES:
+            existing = {row[0] for row in conn.execute("SELECT column_name FROM information_schema.columns WHERE table_schema=current_schema() AND table_name=?", (table,)).fetchall()}
+        else:
+            existing = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
         for name, kind in additions:
             if name not in existing:
                 conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {kind}")
