@@ -314,9 +314,11 @@ export async function getPrediction(
 ): Promise<PredictionResponse> {
   const r = await fetch(`${BASE}/api/hospital/predict`, {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ hospital_id, date }),
   });
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail ?? "Prediction unavailable");
   return r.json();
 }
 

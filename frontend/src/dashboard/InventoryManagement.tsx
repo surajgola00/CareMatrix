@@ -46,6 +46,7 @@ export default function InventoryManagement() {
     confidence_pct: number;
     date: string;
   } | null>(null);
+  const [predictionError, setPredictionError] = useState<string | null>(null);
 
   const [resourcePool, setResourcePool] = useState<ResourcePoolEntry[]>([]);
   const [expandedPool, setExpandedPool] = useState<string | null>(null);
@@ -63,15 +64,18 @@ export default function InventoryManagement() {
     if (!hospitalId) return;
     setLoading(true);
     setOrderDone(false);
-    const data = await getPrediction(today(), hospitalId).catch(() => null);
-    let patientCount: number;
-    if (data) {
-      patientCount = data.prediction.predicted;
-      setPredInfo({ predicted: data.prediction.predicted, confidence_pct: data.prediction.confidence_pct, date: data.prediction.date });
-    } else {
-      patientCount = Math.floor(Math.random() * 60 + 20);
+    setPredictionError(null);
+    let data;
+    try {
+      data = await getPrediction(today(), hospitalId);
+    } catch (error) {
+      setPredictionError(error instanceof Error ? error.message : "Prediction unavailable");
       setPredInfo(null);
+      setLoading(false);
+      return;
     }
+    const patientCount = data.prediction.predicted;
+    setPredInfo({ predicted: data.prediction.predicted, confidence_pct: data.prediction.confidence_pct, date: data.prediction.date });
     const predMap: Record<string, number> = {};
     const statusMap: Record<string, string> = {};
     const newBill: BillItem[] = [];
@@ -168,6 +172,7 @@ export default function InventoryManagement() {
               <p className="pred-info-sub">{predInfo.confidence_pct}% confidence · {predInfo.date}</p>
             </div>
           )}
+          {predictionError && <div className="pred-info-card"><p className="order-error">{predictionError}</p></div>}
 
           <div className="bill-panel">
             {bill.length > 0 ? (

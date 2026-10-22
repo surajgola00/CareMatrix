@@ -4,3 +4,4 @@ CLAUDE.md
 .neon
 node_modules/
 .env.local
+.env

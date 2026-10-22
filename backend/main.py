@@ -2,6 +2,7 @@ import random
 import time
 import uuid
 import os
+from pathlib import Path
 from datetime import datetime
 
 import PridictionModel.core as coree
@@ -343,18 +344,34 @@ HOSPITAL_CSV = {
     "hospital321": "./PridictionModel/data/hospital321.csv",
 }
 
+_PREDICTION_DATA_DIR = Path(__file__).resolve().parent / "PridictionModel" / "data"
+_prediction_training_path = None
+
+
+def prediction_csv_for(hospital_id: str) -> str:
+    """Select a real bundled sample dataset for every hospital account."""
+    direct = _PREDICTION_DATA_DIR / f"{hospital_id}.csv"
+    if direct.exists():
+        return str(direct)
+    samples = sorted(_PREDICTION_DATA_DIR.glob("session_*.csv"))
+    if not samples:
+        raise HTTPException(status_code=503, detail="Prediction sample data is unavailable")
+    index = sum(ord(char) for char in hospital_id) % len(samples)
+    return str(samples[index])
+
+
+def run_hospital_prediction(hospital_id: str, date: str):
+    global _prediction_training_path
+    path = prediction_csv_for(hospital_id)
+    if _prediction_training_path != path:
+        coree.run_training(csv_path=path)
+        _prediction_training_path = path
+    return coree.predict_one(date_str=date)
+
 
 @app.post("/api/hospital/predict")
 def predict_capacity(data: PridictData):
-    path = HOSPITAL_CSV.get(data.hospital_id)
-    if not path:
-        raise HTTPException(
-            status_code=404,
-            detail=f"No prediction data for hospital '{data.hospital_id}'",
-        )
-    coree.run_training(csv_path=path)
-    result = coree.predict_one(date_str=data.date)
-    return result
+    return run_hospital_prediction(data.hospital_id, data.date)
 
 
 @app.get("/api/hospital/info/{hospital_id}")
@@ -388,15 +405,19 @@ def hospital_info(hospital_id: str):
 
 @app.get("/api/surge-alerts")
 def surge_alerts(hospital_id: str = "hospital123"):
-    hour = datetime.now().hour
-    day = datetime.now().weekday()
-    seed_val = hour // 3 + day * 8
-    random.seed(seed_val)
-    indices = random.sample(range(len(_SURGE_POOL)), k=3)
-    selected = [_SURGE_POOL[i] for i in sorted(indices)]
-    if not any(a["code"] == "NETWORK_OVERFLOW" for a in selected):
-        selected.append(_SURGE_POOL[5])
-    return selected[:4]
+    result = run_hospital_prediction(hospital_id, datetime.now().strftime("%Y-%m-%d"))
+    level_map = {"danger": "HIGH", "warning": "MODERATE", "info": "LOW"}
+    return [
+        {
+            "id": f"{hospital_id}-{alert['code']}",
+            "level": level_map.get(alert.get("level", "info"), "LOW"),
+            "code": alert.get("code", "MODEL_ALERT").upper(),
+            "message": alert.get("message", "Prediction model reported an operational alert."),
+            "source": "CareMatrix prediction model",
+            "prediction": result.get("prediction", {}),
+        }
+        for alert in result.get("alerts", [])
+    ]
 
 
 @app.get("/api/resource/pool")

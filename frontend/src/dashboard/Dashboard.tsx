@@ -445,7 +445,7 @@ function Dashboard() {
           <h2>Welcome</h2>
           <p className="welcome-copy">Rapid intake controls.</p>
           <div className="quick-links">
-            <button className="mini-action">Register Patient</button>
+            <button className="mini-action">Create Transfer Request</button>
             <button
               className="mini-action"
               onClick={() => navigate("/inventory")}
@@ -547,7 +547,7 @@ function Dashboard() {
                 <option>Radiology</option>
               </select>
 
-              <button className="action-card">Register Patient</button>
+              <button className="action-card">Broadcast Transfer Request</button>
             </form>
           </section>
 
@@ -608,7 +608,7 @@ function Dashboard() {
 
             {/* Incoming Transfers (Hospital B view) */}
             <div className="notif-block">
-              <h3>Incoming Transfers</h3>
+              <h3>Incoming Transfer Requests</h3>
               <div className="notif-scroll">
                 {transfers.length === 0 && (
                   <p className="notif-empty">No open requests</p>
@@ -684,7 +684,7 @@ function Dashboard() {
 
             {/* Patient Status — outgoing (Hospital A) + locally admitted */}
             <div className="notif-block">
-              <h3>Patient Status</h3>
+              <h3>Transfer Tracking</h3>
               <div className="notif-scroll">
                 {admitted.map((a) => (
                   <div key={a.id} className="notif-item notif-item-admitted">
