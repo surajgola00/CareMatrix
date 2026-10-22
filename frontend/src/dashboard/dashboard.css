@@ -550,3 +550,26 @@
     background: #8f1d1d;
     color: #f2f0ea;
 }
+.activity-page { padding: 1rem 2rem 3rem; }
+.activity-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: .75rem; margin-bottom: 1rem; }
+.activity-summary div { border: 3px solid var(--ink); background: var(--paper); padding: .8rem; box-shadow: 5px 5px 0 var(--ink); }
+.activity-summary b { display: block; font: 2rem var(--font-display); }
+.activity-summary span, .activity-card small { display: block; font-size: .72rem; text-transform: uppercase; font-weight: 700; }
+.activity-filters { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.activity-filters button, .activity-details-button, .activity-actions button { border: 2px solid var(--ink); background: var(--paper); padding: .45rem .7rem; cursor: pointer; font-weight: 700; text-transform: uppercase; font-size: .7rem; }
+.activity-filters button.active, .activity-actions button { background: var(--accent); color: var(--paper); }
+.activity-card { border: 3px solid var(--ink); background: var(--paper); box-shadow: 6px 6px 0 var(--ink); padding: 1rem; margin-bottom: 1rem; }
+.activity-card-head { display: flex; justify-content: space-between; gap: 1rem; }
+.activity-card-head h3 { margin: .3rem 0; }
+.activity-card-head p { margin: 0; font-weight: 700; }
+.activity-card-head > div:last-child { text-align: right; }
+.activity-kind { font-size: .65rem; font-weight: 800; letter-spacing: .08em; }
+.activity-details-button { margin-top: .8rem; }
+.activity-detail { border-top: 2px solid var(--ink); margin-top: .8rem; padding-top: .8rem; }
+.activity-timeline { display: flex; flex-direction: column; gap: .45rem; }
+.timeline-step { display: grid; grid-template-columns: 1.5rem 1fr auto; gap: .45rem; align-items: center; text-transform: capitalize; }
+.timeline-step.complete { color: #2e7d32; }
+.timeline-step.pending { color: #777; }
+.activity-actions { margin-top: .8rem; display: flex; gap: .5rem; }
+.dismiss-request { border: 0; background: transparent; font-size: 1.2rem; cursor: pointer; }
+@media (max-width: 800px) { .activity-summary { grid-template-columns: repeat(2, 1fr); } .activity-card-head { flex-direction: column; } .activity-card-head > div:last-child { text-align: left; } }

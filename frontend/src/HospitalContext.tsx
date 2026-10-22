@@ -34,7 +34,12 @@ export function HospitalProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!hospital) return;
-    const id = window.setInterval(() => heartbeat().catch(() => setHospitalState(null)), 5000);
+    const id = window.setInterval(() => {
+      heartbeat().catch((error: Error) => {
+        // A temporary LAN/API failure must not log the presenter out.
+        if (error.message === "AUTH_EXPIRED") setHospitalState(null);
+      });
+    }, 10000);
     return () => window.clearInterval(id);
   }, [hospital]);
 

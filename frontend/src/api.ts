@@ -26,7 +26,8 @@ export async function getCurrentUser() {
 
 export async function heartbeat() {
   const r = await fetch(`${BASE}/api/auth/heartbeat`, { method: "POST", credentials: "include" });
-  if (!r.ok) throw new Error("Session heartbeat failed");
+  if (r.status === 401) throw new Error("AUTH_EXPIRED");
+  if (!r.ok) throw new Error("HEARTBEAT_FAILED");
 }
 
 export async function logout() {

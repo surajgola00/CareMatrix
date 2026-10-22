@@ -1,15 +1,18 @@
 {
-  "sessions": 77,
-  "total_rows": 876137,
+  "sessions": 85,
+  "total_rows": 1018500,
   "date_range": {
-    "first": "2023-01-01",
-    "last": "2024-07-01"
+    "first": "2021-01-01",
+    "last": "2025-12-31"
   },
   "specialties": [
-    "Dental",
+    "Cardiology",
+    "Dermatology",
     "ENT",
     "General Medicine",
-    "Orthopaedic"
+    "Neurology",
+    "Orthopedics",
+    "Pediatrics"
   ],
   "csv_hashes": [
     "e08b13ac1d59",
@@ -88,13 +91,21 @@
     "ce1bcd04bc4e",
     "cb05e0430e41",
     "040ccbf0c7ee",
-    "eac1605f78f3"
+    "eac1605f78f3",
+    "19f1018eed8f",
+    "eac1605f78f3",
+    "040ccbf0c7ee",
+    "ce1bcd04bc4e",
+    "eac1605f78f3",
+    "eac1605f78f3",
+    "ce1bcd04bc4e",
+    "040ccbf0c7ee"
   ],
   "cumulative_stats": {
-    "global_mean": 35.31341240875913,
-    "global_std": 9.946173842743686,
+    "global_mean": 24.099952055889133,
+    "global_std": 10.106985253325709,
     "best_model": "GBM",
-    "best_mae": 0.8
+    "best_mae": 0.0
   },
   "training_history": [
     {
@@ -943,10 +954,98 @@
       "accuracy": 97.6,
       "csv": "C:\\Users\\ss033\\Documents\\HospitalProject\\CareMatrix\\backend\\PridictionModel\\data\\session_0074.csv",
       "gpu": "NVIDIA GeForce RTX 3050 6GB Laptop GPU, 6144 MiB"
+    },
+    {
+      "session": 78,
+      "date": "2026-10-22T21:46:24.152825",
+      "rows_added": 43801,
+      "total_rows": 919938,
+      "best_model": "GBM",
+      "best_mae": 0.0,
+      "accuracy": 100.0,
+      "csv": "C:\\Users\\ss033\\Documents\\HospitalProject\\CareMatrix\\backend\\PridictionModel\\data\\session_0042.csv",
+      "gpu": "NVIDIA GeForce RTX 3050 6GB Laptop GPU, 6144 MiB"
+    },
+    {
+      "session": 79,
+      "date": "2026-10-22T21:47:17.380179",
+      "rows_added": 2192,
+      "total_rows": 922130,
+      "best_model": "GBM",
+      "best_mae": 0.8,
+      "accuracy": 97.6,
+      "csv": "C:\\Users\\ss033\\Documents\\HospitalProject\\CareMatrix\\backend\\PridictionModel\\data\\session_0054.csv",
+      "gpu": "NVIDIA GeForce RTX 3050 6GB Laptop GPU, 6144 MiB"
+    },
+    {
+      "session": 80,
+      "date": "2026-10-22T21:47:46.802840",
+      "rows_added": 43801,
+      "total_rows": 965931,
+      "best_model": "GBM",
+      "best_mae": 0.0,
+      "accuracy": 100.0,
+      "csv": "C:\\Users\\ss033\\Documents\\HospitalProject\\CareMatrix\\backend\\PridictionModel\\data\\session_0032.csv",
+      "gpu": "NVIDIA GeForce RTX 3050 6GB Laptop GPU, 6144 MiB"
+    },
+    {
+      "session": 81,
+      "date": "2026-10-22T21:49:22.037183",
+      "rows_added": 2192,
+      "total_rows": 968123,
+      "best_model": "DT",
+      "best_mae": 0.8,
+      "accuracy": 97.7,
+      "csv": "C:\\Users\\ss033\\Documents\\HospitalProject\\CareMatrix\\backend\\PridictionModel\\data\\session_0016.csv",
+      "gpu": "NVIDIA GeForce RTX 3050 6GB Laptop GPU, 6144 MiB"
+    },
+    {
+      "session": 82,
+      "date": "2026-10-22T21:49:25.201977",
+      "rows_added": 2192,
+      "total_rows": 970315,
+      "best_model": "GBM",
+      "best_mae": 0.8,
+      "accuracy": 97.6,
+      "csv": "C:\\Users\\ss033\\Documents\\HospitalProject\\CareMatrix\\backend\\PridictionModel\\data\\session_0081.csv",
+      "gpu": "NVIDIA GeForce RTX 3050 6GB Laptop GPU, 6144 MiB"
+    },
+    {
+      "session": 83,
+      "date": "2026-10-22T21:49:28.381713",
+      "rows_added": 2192,
+      "total_rows": 972507,
+      "best_model": "GBM",
+      "best_mae": 0.8,
+      "accuracy": 97.6,
+      "csv": "C:\\Users\\ss033\\Documents\\HospitalProject\\CareMatrix\\backend\\PridictionModel\\data\\session_0040.csv",
+      "gpu": "NVIDIA GeForce RTX 3050 6GB Laptop GPU, 6144 MiB"
+    },
+    {
+      "session": 84,
+      "date": "2026-10-22T21:49:31.324175",
+      "rows_added": 2192,
+      "total_rows": 974699,
+      "best_model": "DT",
+      "best_mae": 0.8,
+      "accuracy": 97.7,
+      "csv": "C:\\Users\\ss033\\Documents\\HospitalProject\\CareMatrix\\backend\\PridictionModel\\data\\session_0009.csv",
+      "gpu": "NVIDIA GeForce RTX 3050 6GB Laptop GPU, 6144 MiB"
+    },
+    {
+      "session": 85,
+      "date": "2026-10-22T21:51:22.580823",
+      "rows_added": 43801,
+      "total_rows": 1018500,
+      "best_model": "GBM",
+      "best_mae": 0.0,
+      "accuracy": 100.0,
+      "csv": "C:\\Users\\ss033\\Documents\\HospitalProject\\CareMatrix\\backend\\PridictionModel\\data\\session_0002.csv",
+      "gpu": "NVIDIA GeForce RTX 3050 6GB Laptop GPU, 6144 MiB"
     }
   ],
   "capacity_defaults": {
-    "doctors": 3.8,
+    "doctors": 5.0,
     "counters": 3.0,
     "totalBeds": 100,
     "bedsOccupied": 72,

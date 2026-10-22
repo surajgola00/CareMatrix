@@ -16,7 +16,8 @@ from pydantic import BaseModel, Field
 from storage import connect, USE_POSTGRES
 
 SESSION_COOKIE = os.getenv("CAREMATRIX_SESSION_COOKIE", "carematrix_session")
-EXPIRY_SECONDS = int(os.getenv("CAREMATRIX_PRESENCE_EXPIRY_SECONDS", "30"))
+# Allow several missed LAN heartbeats before expiring a session.
+EXPIRY_SECONDS = int(os.getenv("CAREMATRIX_PRESENCE_EXPIRY_SECONDS", "120"))
 
 router = APIRouter()
 
@@ -61,8 +62,7 @@ def migrate():
     """)
     for table, additions in {
         "hospitals": [("location", "TEXT"), ("logo_url", "TEXT"), ("created_at", "INTEGER")],
-        "patients": [("requester_hospital_id", "TEXT"), ("created_at", "INTEGER"), ("updated_at", "INTEGER")],
-        "patients": [("transfer_stage", "TEXT")],
+        "patients": [("requester_hospital_id", "TEXT"), ("created_at", "INTEGER"), ("updated_at", "INTEGER"), ("transfer_stage", "TEXT")],
         "resource_requests": [("requester_hospital_id", "TEXT"), ("selected_provider_id", "TEXT"), ("created_at", "INTEGER"), ("updated_at", "INTEGER"), ("fulfillment_stage", "TEXT")],
     }.items():
         table_exists_sql = "SELECT 1 FROM information_schema.tables WHERE table_schema=current_schema() AND table_name=?" if USE_POSTGRES else "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?"
@@ -157,7 +157,7 @@ def login(data: LoginData, response: Response):
     conn.execute("INSERT INTO hospital_sessions VALUES (?, ?, ?, ?, ?, 0)",
                  (sid, account["id"], account["hospital_id"], t, t))
     conn.commit(); conn.close()
-    response.set_cookie(SESSION_COOKIE, sid, httponly=True, samesite="lax", max_age=86400)
+    response.set_cookie(SESSION_COOKIE, sid, httponly=True, samesite="lax", max_age=86400, path="/")
     return {"hospital": hospital_payload(hospital), "username": account["username"], "role": account["role"]}
 
 
@@ -179,7 +179,7 @@ def heartbeat(carematrix_session: Optional[str] = Cookie(default=None)):
 def logout(response: Response, carematrix_session: Optional[str] = Cookie(default=None)):
     if carematrix_session:
         conn = db(); conn.execute("UPDATE hospital_sessions SET signed_out=1 WHERE id=?", (carematrix_session,)); conn.commit(); conn.close()
-    response.delete_cookie(SESSION_COOKIE)
+    response.delete_cookie(SESSION_COOKIE, path="/")
     return {"status": "signed_out"}
 
 
@@ -232,6 +232,8 @@ def transfer_response(transfer_id: str, data: ResponseData, carematrix_session: 
     if not inv or not req: conn.close(); raise HTTPException(404, "Invitation not found")
     if req["status"] not in ("open", "broadcast"): conn.close(); raise HTTPException(409, "Request is no longer open")
     conn.execute("UPDATE transfer_invitations SET response=?, responded_at=? WHERE id=?", (data.response, now(), inv["id"]))
+    if data.response == "accepted":
+        conn.execute("UPDATE patients SET transfer_stage=COALESCE(transfer_stage, 'accepted'), updated_at=? WHERE id=?", (now(), transfer_id))
     audit(conn, "transfer", transfer_id, data.response, actor)
     conn.commit(); conn.close(); return {"status": data.response}
 
@@ -276,7 +278,7 @@ def resource_response(request_id: str, data: ResponseData, carematrix_session: O
     inv = conn.execute("SELECT * FROM resource_invitations WHERE request_id=? AND recipient_hospital_id=?", (request_id, actor["hospital_id"])).fetchone()
     if not inv: conn.close(); raise HTTPException(404, "Invitation not found")
     if data.response == "accepted":
-        conn.execute("UPDATE resource_requests SET status='fulfilled', selected_provider_id=?, updated_at=? WHERE id=? AND status='open'", (actor["hospital_id"], now(), request_id))
+        conn.execute("UPDATE resource_requests SET status='fulfilled', selected_provider_id=?, fulfillment_stage='accepted', updated_at=? WHERE id=? AND status='open'", (actor["hospital_id"], now(), request_id))
         selected = conn.execute("SELECT selected_provider_id FROM resource_requests WHERE id=?", (request_id,)).fetchone()
         if selected and selected[0] == actor["hospital_id"]:
             conn.execute("UPDATE resource_invitations SET response='accepted', responded_at=? WHERE id=?", (now(), inv["id"]))
@@ -293,6 +295,52 @@ def dismiss_dashboard_item(entity_type: str, entity_id: str, carematrix_session:
     actor = session_hospital(carematrix_session); conn = db()
     conn.execute("INSERT INTO dismissed_items (hospital_id, entity_type, entity_id, dismissed_at) VALUES (?, ?, ?, ?) ON CONFLICT (hospital_id, entity_type, entity_id) DO NOTHING", (actor["hospital_id"], entity_type, entity_id, now()))
     conn.commit(); conn.close(); return {"status": "dismissed"}
+
+
+@router.get("/api/activity")
+def activity(carematrix_session: Optional[str] = Cookie(default=None)):
+    actor = session_hospital(carematrix_session); conn = db(); hid = actor["hospital_id"]
+    transfers = conn.execute("""SELECT p.id, 'patient' kind, p.transfer_stage stage, p.status,
+        p.department, p.priority, p.created_at, p.updated_at, src.name origin_name, dst.name destination_name
+        FROM patients p JOIN hospitals src ON src.id=p.requester_hospital_id
+        LEFT JOIN hospitals dst ON dst.id=COALESCE((SELECT hospital_id FROM assignments a WHERE a.patient_id=p.id LIMIT 1), (SELECT recipient_hospital_id FROM transfer_invitations i WHERE i.transfer_id=p.id AND i.response='accepted' ORDER BY i.responded_at DESC NULLS LAST LIMIT 1))
+        WHERE p.requester_hospital_id=? OR EXISTS (SELECT 1 FROM transfer_invitations i WHERE i.transfer_id=p.id AND i.recipient_hospital_id=? AND i.response='accepted')
+        ORDER BY p.updated_at DESC NULLS LAST, p.created_at DESC""", (hid, hid)).fetchall()
+    resources = conn.execute("""SELECT r.id, 'resource' kind, r.fulfillment_stage stage, r.status,
+        r.resource_type department, CAST(r.quantity AS TEXT) priority, r.created_at,
+        src.name origin_name, dst.name destination_name
+        FROM resource_requests r JOIN hospitals src ON src.id=r.requester_hospital_id
+        LEFT JOIN hospitals dst ON dst.id=r.selected_provider_id
+        WHERE r.requester_hospital_id=? OR r.selected_provider_id=? ORDER BY r.updated_at DESC NULLS LAST, r.created_at DESC""", (hid, hid)).fetchall()
+    conn.close(); return [dict(row) for row in list(transfers) + list(resources)]
+
+
+@router.get("/api/activity/{entity_type}/{entity_id}")
+def activity_detail(entity_type: str, entity_id: str, carematrix_session: Optional[str] = Cookie(default=None)):
+    actor = session_hospital(carematrix_session); conn = db()
+    if entity_type not in ("transfer", "resource") or not activity_actor_access(conn, actor, entity_type, entity_id):
+        conn.close(); raise HTTPException(404, "Activity not found")
+    if entity_type == "transfer":
+        details = conn.execute("SELECT p.*, src.name origin_name, src.location origin_location FROM patients p JOIN hospitals src ON src.id=p.requester_hospital_id WHERE p.id=?", (entity_id,)).fetchone()
+    else:
+        details = conn.execute("SELECT r.*, src.name origin_name, src.location origin_location, dst.name destination_name FROM resource_requests r JOIN hospitals src ON src.id=r.requester_hospital_id LEFT JOIN hospitals dst ON dst.id=r.selected_provider_id WHERE r.id=?", (entity_id,)).fetchone()
+    events = conn.execute("SELECT * FROM audit_events WHERE entity_type=? AND entity_id=? ORDER BY created_at", (entity_type, entity_id)).fetchall()
+    conn.close(); return {"details": dict(details) if details else None, "events": [dict(row) for row in events]}
+
+
+@router.post("/api/activity/{entity_type}/{entity_id}/stage")
+def update_activity_stage(entity_type: str, entity_id: str, stage: str, carematrix_session: Optional[str] = Cookie(default=None)):
+    actor = session_hospital(carematrix_session); conn = db()
+    if not activity_actor_access(conn, actor, entity_type, entity_id): conn.close(); raise HTTPException(403, "Not authorized for this activity")
+    stages = TRANSFER_STAGES if entity_type == "transfer" else RESOURCE_STAGES
+    if stage not in stages: conn.close(); raise HTTPException(422, "Invalid activity stage")
+    table, column = ("patients", "transfer_stage") if entity_type == "transfer" else ("resource_requests", "fulfillment_stage")
+    current = conn.execute(f"SELECT {column} FROM {table} WHERE id=?", (entity_id,)).fetchone()
+    current_stage = current[0] if current and current[0] else None
+    if current_stage and stages.index(stage) < stages.index(current_stage): conn.close(); raise HTTPException(409, "Cannot move activity backwards")
+    conn.execute(f"UPDATE {table} SET {column}=?, updated_at=? WHERE id=?", (stage, now(), entity_id))
+    audit(conn, entity_type, entity_id, stage, actor)
+    conn.commit(); conn.close(); return {"status": stage, "entity_type": entity_type, "entity_id": entity_id}
 
 
 @router.post("/api/resource/{request_id}/select")
