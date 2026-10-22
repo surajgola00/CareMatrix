@@ -179,3 +179,19 @@ Suraj Gola,
 - Harshvardhan Negi
 - Suraj Gola
 - Tushar Kaushik
+# One-command Windows setup
+
+On a fresh Windows machine, run `setup.bat`. It checks Python and Node.js (using `winget` when available), creates `backend/.venv`, installs dependencies, creates `backend/.env.local`, and initializes the PostgreSQL schema. It can optionally load the demo hospitals, inventory, and accounts.
+
+You must provide your own PostgreSQL `DATABASE_URL` from Neon or local PostgreSQL. The script does not copy credentials from this machine. See `backend/.env.example`.
+
+After setup, run the backend and frontend in separate terminals:
+
+```powershell
+cd backend
+.venv\Scripts\python.exe -m uvicorn main:app --reload --port 8000
+
+cd frontend
+npm run dev
+```
+

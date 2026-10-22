@@ -8,7 +8,7 @@ import PridictionModel.core as coree
 from fastapi import FastAPI, HTTPException, Cookie
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from mvp import router as mvp_router, migrate as mvp_migrate
+from mvp import router as mvp_router, migrate as mvp_migrate, session_hospital, EXPIRY_SECONDS, audit as mvp_audit
 from storage import connect, init_schema, USE_POSTGRES
 
 
@@ -430,9 +430,16 @@ def update_capacity(data: CapacityUpdate):
 
 
 @app.get("/api/hospital/open-requests")
-def open_requests(department: str = None):
+def open_requests(department: str = None, carematrix_session: str | None = Cookie(default=None)):
     conn, cursor = get_db()
-    if department:
+    recipient_id = None
+    if carematrix_session:
+        recipient_id = session_hospital(carematrix_session)["hospital_id"]
+    if recipient_id and department:
+        cursor.execute("SELECT p.* FROM patients p JOIN transfer_invitations i ON i.transfer_id=p.id WHERE p.status='open' AND p.department=? AND i.recipient_hospital_id=? AND i.response IN ('pending','accepted')", (department, recipient_id))
+    elif recipient_id:
+        cursor.execute("SELECT p.* FROM patients p JOIN transfer_invitations i ON i.transfer_id=p.id WHERE p.status='open' AND i.recipient_hospital_id=? AND i.response IN ('pending','accepted')", (recipient_id,))
+    elif department:
         cursor.execute(
             "SELECT * FROM patients WHERE status='open' AND department=?", (department,)
         )
@@ -444,15 +451,41 @@ def open_requests(department: str = None):
 
 
 @app.post("/api/hospital/respond")
-def hospital_respond(data: HospitalResponse):
+def hospital_respond(data: HospitalResponse, carematrix_session: str | None = Cookie(default=None)):
     conn, cursor = get_db()
-    cursor.execute(
-        "INSERT INTO responses (patient_id, hospital_id, status, timestamp) VALUES (?, ?, ?, ?)",
-        (data.patient_id, data.hospital_id, data.status, int(time.time())),
-    )
+    hospital_id = data.hospital_id
+    if carematrix_session:
+        hospital_id = session_hospital(carematrix_session)["hospital_id"]
+    now = int(time.time())
+    invitation = cursor.execute(
+        "SELECT id FROM transfer_invitations WHERE transfer_id=? AND recipient_hospital_id=?",
+        (data.patient_id, hospital_id),
+    ).fetchone()
+    if carematrix_session and not invitation:
+        conn.close()
+        raise HTTPException(status_code=403, detail="Hospital was not invited to this transfer")
+    patient = cursor.execute("SELECT status FROM patients WHERE id=?", (data.patient_id,)).fetchone()
+    if not patient:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Transfer request not found")
+    existing = cursor.execute(
+        "SELECT patient_id FROM responses WHERE patient_id=? AND hospital_id=?",
+        (data.patient_id, hospital_id),
+    ).fetchone()
+    if existing:
+        cursor.execute("UPDATE responses SET status=?, timestamp=? WHERE patient_id=? AND hospital_id=?",
+                       (data.status, now, data.patient_id, hospital_id))
+    else:
+        cursor.execute(
+            "INSERT INTO responses (patient_id, hospital_id, status, timestamp) VALUES (?, ?, ?, ?)",
+            (data.patient_id, hospital_id, data.status, now),
+        )
+    if invitation:
+        cursor.execute("UPDATE transfer_invitations SET response=?, responded_at=? WHERE transfer_id=? AND recipient_hospital_id=?",
+                       (data.status, now, data.patient_id, hospital_id))
     conn.commit()
     conn.close()
-    return {"status": "recorded"}
+    return {"status": data.status}
 
 
 @app.post("/api/request")
@@ -576,24 +609,54 @@ def create_resource_request(data: ResourceRequest, carematrix_session: str | Non
 
 
 @app.get("/api/resource/open")
-def get_open_resource_requests():
+def get_open_resource_requests(carematrix_session: str | None = Cookie(default=None)):
     conn, cursor = get_db()
-    cursor.execute("SELECT * FROM resource_requests WHERE status='open'")
+    if carematrix_session:
+        recipient_id = session_hospital(carematrix_session)["hospital_id"]
+        cursor.execute("SELECT r.* FROM resource_requests r JOIN resource_invitations i ON i.request_id=r.id WHERE r.status='open' AND i.recipient_hospital_id=? AND i.response IN ('pending','accepted')", (recipient_id,))
+    else:
+        cursor.execute("SELECT * FROM resource_requests WHERE status='open'")
     rows = cursor.fetchall()
     conn.close()
     return [tuple(r) for r in rows]
 
 
 @app.post("/api/resource/respond")
-def respond_resource(data: ResourceResponse):
+def respond_resource(data: ResourceResponse, carematrix_session: str | None = Cookie(default=None)):
     conn, cursor = get_db()
-    cursor.execute(
-        "INSERT INTO resource_responses (request_id, provider_hospital_id, status, timestamp) VALUES (?, ?, ?, ?)",
-        (data.request_id, data.hospital_id, data.status, int(time.time())),
-    )
+    hospital_id = data.hospital_id
+    if carematrix_session:
+        hospital_id = session_hospital(carematrix_session)["hospital_id"]
+    now = int(time.time())
+    invitation = cursor.execute(
+        "SELECT id FROM resource_invitations WHERE request_id=? AND recipient_hospital_id=?",
+        (data.request_id, hospital_id),
+    ).fetchone()
+    if carematrix_session and not invitation:
+        conn.close()
+        raise HTTPException(status_code=403, detail="Hospital was not invited to this resource request")
+    request = cursor.execute("SELECT status FROM resource_requests WHERE id=?", (data.request_id,)).fetchone()
+    if not request:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Resource request not found")
+    existing = cursor.execute(
+        "SELECT request_id FROM resource_responses WHERE request_id=? AND provider_hospital_id=?",
+        (data.request_id, hospital_id),
+    ).fetchone()
+    if existing:
+        cursor.execute("UPDATE resource_responses SET status=?, timestamp=? WHERE request_id=? AND provider_hospital_id=?",
+                       (data.status, now, data.request_id, hospital_id))
+    else:
+        cursor.execute(
+            "INSERT INTO resource_responses (request_id, provider_hospital_id, status, timestamp) VALUES (?, ?, ?, ?)",
+            (data.request_id, hospital_id, data.status, now),
+        )
+    if invitation:
+        cursor.execute("UPDATE resource_invitations SET response=?, responded_at=? WHERE request_id=? AND recipient_hospital_id=?",
+                       (data.status, now, data.request_id, hospital_id))
     conn.commit()
     conn.close()
-    return {"status": "recorded"}
+    return {"status": data.status}
 
 
 @app.get("/api/resource/responses")

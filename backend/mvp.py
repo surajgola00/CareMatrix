@@ -258,5 +258,5 @@ def select_resource(request_id: str, data: SelectData, carematrix_session: Optio
     offer = conn.execute("SELECT 1 FROM resource_invitations WHERE request_id=? AND recipient_hospital_id=? AND response='accepted'", (request_id, data.hospital_id)).fetchone()
     if not request or not offer or request["status"] != "open": conn.close(); raise HTTPException(409, "Provider is not selectable")
     conn.execute("UPDATE resource_requests SET status='fulfilled', selected_provider_id=?, updated_at=? WHERE id=? AND status='open'", (data.hospital_id, now(), request_id))
-    conn.execute("UPDATE resource_invitations SET response='closed' WHERE request_id=? AND response='pending'", (request_id, request_id))
+    conn.execute("UPDATE resource_invitations SET response='closed' WHERE request_id=? AND response='pending'", (request_id,))
     audit(conn, "resource", request_id, "provider_selected", actor, {"provider_id": data.hospital_id}); conn.commit(); conn.close(); return {"status": "fulfilled", "provider_id": data.hospital_id}

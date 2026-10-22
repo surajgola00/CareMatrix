@@ -314,10 +314,9 @@ function Dashboard() {
   ) => {
     if (!hospitalId) return;
 
-    if (decision === "ACCEPTED_PENDING") {
-      await respondToPatient(transfer.id, hospitalId, "accepted").catch(
-        () => {},
-      );
+    try {
+      if (decision === "ACCEPTED_PENDING") {
+      await respondToPatient(transfer.id, hospitalId, "accepted");
       setTransfers((prev) =>
         prev.map((r) =>
           r.id === transfer.id
@@ -325,10 +324,8 @@ function Dashboard() {
             : r,
         ),
       );
-    } else {
-      await respondToPatient(transfer.id, hospitalId, "rejected").catch(
-        () => {},
-      );
+      } else {
+      await respondToPatient(transfer.id, hospitalId, "rejected");
       setTransfers((prev) =>
         prev.map((r) =>
           r.id === transfer.id ? { ...r, status: "DECLINED" as const } : r,
@@ -338,6 +335,9 @@ function Dashboard() {
         () => setTransfers((prev) => prev.filter((r) => r.id !== transfer.id)),
         1500,
       );
+      }
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Unable to update this request");
     }
   };
 
@@ -554,11 +554,11 @@ function Dashboard() {
           {/* ── NOTIFICATIONS ── */}
           <section className="notification-panel">
             {/* Surge Intelligence */}
-            {surgeAlerts.length > 0 && (
+            {(
               <div className="notif-block surge-alert-block">
                 <h3>⚠ Surge Intelligence</h3>
                 <div className="notif-scroll">
-                  {surgeAlerts.map((alert) => (
+                  {surgeAlerts.length === 0 ? <p className="notif-empty">No active surge alerts.</p> : surgeAlerts.map((alert) => (
                     <div key={alert.id} className="surge-alert-item">
                       <div className="surge-alert-row">
                         <span

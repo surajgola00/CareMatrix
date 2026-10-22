@@ -25,6 +25,15 @@ CREATE TABLE IF NOT EXISTS resources (
   PRIMARY KEY (hospital_id, resource_type)
 );
 
+CREATE TABLE IF NOT EXISTS hospital_accounts (
+  id TEXT PRIMARY KEY,
+  hospital_id TEXT NOT NULL REFERENCES hospitals(id) ON DELETE CASCADE,
+  username TEXT UNIQUE NOT NULL,
+  password TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'admin',
+  active INTEGER NOT NULL DEFAULT 1
+);
+
 INSERT INTO hospitals (id, name, location, lat, lng, status, logo_url)
 VALUES
   ('fortis_memorial_gurugram', 'Fortis Memorial Research Institute', 'Sector 44, Gurugram', 28.4595, 77.0726, 'active', '/hospital-logos/fortis_memorial_gurugram.svg'),
@@ -53,3 +62,14 @@ VALUES
   ('medanta_medicity', 'Oxygen Cylinders', 30), ('medanta_medicity', 'Ventilators', 8), ('medanta_medicity', 'Blood Units B+', 20),
   ('artemis_gurugram', 'Oxygen Cylinders', 16), ('artemis_gurugram', 'Ventilators', 5), ('artemis_gurugram', 'Blood Units O-', 10)
 ON CONFLICT (hospital_id, resource_type) DO UPDATE SET available = EXCLUDED.available;
+
+INSERT INTO hospital_accounts (id, hospital_id, username, password, role, active)
+VALUES
+  ('acct_fortis_memorial', 'fortis_memorial_gurugram', 'admin_fortis', 'CareMatrix@Fortis2026', 'admin', 1),
+  ('acct_max_gurugram', 'max_gurugram', 'admin_max', 'CareMatrix@Max2026', 'admin', 1),
+  ('acct_paras_gurugram', 'paras_gurugram', 'admin_paras', 'CareMatrix@Paras2026', 'admin', 1),
+  ('acct_medanta_medicity', 'medanta_medicity', 'admin_medanta', 'CareMatrix@Medanta2026', 'admin', 1),
+  ('acct_artemis_gurugram', 'artemis_gurugram', 'admin_artemis', 'CareMatrix@Artemis2026', 'admin', 1)
+ON CONFLICT (id) DO UPDATE SET
+  hospital_id = EXCLUDED.hospital_id, username = EXCLUDED.username,
+  password = EXCLUDED.password, role = EXCLUDED.role, active = EXCLUDED.active;

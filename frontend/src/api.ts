@@ -60,7 +60,7 @@ export async function getOpenRequests(department?: string) {
   const url = department
     ? `${BASE}/api/hospital/open-requests?department=${encodeURIComponent(department)}`
     : `${BASE}/api/hospital/open-requests`;
-  const r = await fetch(url);
+  const r = await fetch(url, { credentials: "include" });
   const rows: any[] = await r.json();
   return rows.map((row) => ({
     id: row[0] as string,
@@ -78,11 +78,14 @@ export async function respondToPatient(
   hospital_id: string,
   status: "accepted" | "rejected",
 ) {
-  await fetch(`${BASE}/api/hospital/respond`, {
+  const r = await fetch(`${BASE}/api/hospital/respond`, {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ patient_id, hospital_id, status }),
   });
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail ?? "Unable to record transfer response");
+  return r.json();
 }
 
 export async function createPatientRequest(
@@ -92,7 +95,7 @@ export async function createPatientRequest(
   lng: number,
 ) {
   const r = await fetch(`${BASE}/api/request`, {
-    method: "POST",
+    method: "POST", credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ department, priority, lat, lng }),
   });
@@ -102,6 +105,7 @@ export async function createPatientRequest(
 export async function getPatientResponses(patient_id: string) {
   const r = await fetch(
     `${BASE}/api/patient/responses?patient_id=${patient_id}`,
+    { credentials: "include" },
   );
   const rows: any[] = await r.json();
   return rows.map((row) => ({
@@ -115,6 +119,7 @@ export async function getPatientResponses(patient_id: string) {
 export async function selectHospital(patient_id: string, hospital_id: string) {
   const r = await fetch(`${BASE}/api/patient/select`, {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ patient_id, hospital_id }),
   });
@@ -143,6 +148,7 @@ export async function createResourceRequest(
 ) {
   const r = await fetch(`${BASE}/api/resource/request`, {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ hospital_id, resource_type, quantity }),
   });
@@ -150,7 +156,7 @@ export async function createResourceRequest(
 }
 
 export async function getOpenResourceRequests() {
-  const r = await fetch(`${BASE}/api/resource/open`);
+  const r = await fetch(`${BASE}/api/resource/open`, { credentials: "include" });
   const rows: any[] = await r.json();
   return rows.map((row) => ({
     id: row[0] as string,
@@ -167,11 +173,14 @@ export async function respondToResource(
   hospital_id: string,
   status: "accepted" | "rejected",
 ) {
-  await fetch(`${BASE}/api/resource/respond`, {
+  const r = await fetch(`${BASE}/api/resource/respond`, {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ request_id, hospital_id, status }),
   });
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail ?? "Unable to record resource response");
+  return r.json();
 }
 
 export async function getHospitalInfo(hospital_id: string): Promise<{
