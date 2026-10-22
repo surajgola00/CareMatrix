@@ -185,6 +185,25 @@ On a fresh Windows machine, run `setup.bat`. It checks Python and Node.js (using
 
 You must provide your own PostgreSQL `DATABASE_URL` from Neon or local PostgreSQL. The script does not copy credentials from this machine. See `backend/.env.example`.
 
+## Local-network judge demo
+
+Connect the laptop and the judge devices to the same Wi-Fi or Ethernet network, then run:
+
+```powershell
+.\run-lan.bat
+```
+
+The launcher detects the laptop's LAN address, starts FastAPI on `0.0.0.0:8000`, starts Vite on `0.0.0.0:5173`, and configures the frontend to call the laptop's backend. Open the printed frontend URL, such as `http://192.168.0.198:5173`, on the other devices. Keep the two server windows open.
+
+If Windows Firewall blocks access, run PowerShell as Administrator once and allow the two private-network ports:
+
+```powershell
+New-NetFirewallRule -DisplayName "CareMatrix Frontend LAN" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 5173 -Profile Private
+New-NetFirewallRule -DisplayName "CareMatrix Backend LAN" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 8000 -Profile Private
+```
+
+This is local-only access; it does not make the site public on the internet. The laptop's LAN address can change when joining a different network, so always use the URL printed by `run-lan.bat`.
+
 After setup, run the backend and frontend in separate terminals:
 
 ```powershell
